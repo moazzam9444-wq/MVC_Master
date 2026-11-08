@@ -1,0 +1,122 @@
+[
+  {
+    "controller": "Home",
+    "action": "Index",
+    "url": "index.html",
+    "view": "Views/Home/Index.cshtml"
+  },
+  {
+    "controller": "Home",
+    "action": "About",
+    "url": "Pages/About/about.html",
+    "view": "Views/Home/About.cshtml"
+  },
+  {
+    "controller": "Home",
+    "action": "Contact",
+    "url": "Pages/Contact/contact.html",
+    "view": "Views/Home/Contact.cshtml"
+  },
+  {
+    "controller": "Auth",
+    "action": "Login",
+    "url": "Pages/Auth/login.html",
+    "view": "Views/Auth/Login.cshtml"
+  },
+  {
+    "controller": "Auth",
+    "action": "Register",
+    "url": "Pages/Auth/register.html",
+    "view": "Views/Auth/Register.cshtml"
+  },
+  {
+    "controller": "Fields",
+    "action": "Index",
+    "url": "Pages/Fields/fields.html",
+    "view": "Views/Fields/Index.cshtml"
+  },
+  {
+    "controller": "Fields",
+    "action": "Details",
+    "url": "Pages/Fields/field-details.html",
+    "view": "Views/Fields/Details.cshtml"
+  },
+  {
+    "controller": "OpenGames",
+    "action": "Index",
+    "url": "Pages/OpenGames/open-games.html",
+    "view": "Views/OpenGames/Index.cshtml"
+  },
+  {
+    "controller": "OpenGames",
+    "action": "Details",
+    "url": "Pages/OpenGames/game-details.html",
+    "view": "Views/OpenGames/Details.cshtml"
+  },
+  {
+    "controller": "Teams",
+    "action": "Index",
+    "url": "Pages/Teams/teams.html",
+    "view": "Views/Teams/Index.cshtml"
+  },
+  {
+    "controller": "Challenges",
+    "action": "Index",
+    "url": "Pages/Challenges/challenges.html",
+    "view": "Views/Challenges/Index.cshtml"
+  },
+  {
+    "controller": "Tournaments",
+    "action": "Index",
+    "url": "Pages/Tournaments/tournaments.html",
+    "view": "Views/Tournaments/Index.cshtml"
+  },
+  {
+    "controller": "Tournaments",
+    "action": "Details",
+    "url": "Pages/Tournaments/tournament-details.html",
+    "view": "Views/Tournaments/Details.cshtml"
+  },
+  {
+    "controller": "Dashboard",
+    "action": "Player",
+    "url": "Pages/Dashboard/player.html",
+    "view": "Views/Dashboard/Player.cshtml"
+  },
+  {
+    "controller": "Dashboard",
+    "action": "Owner",
+    "url": "Pages/Dashboard/owner.html",
+    "view": "Views/Dashboard/Owner.cshtml"
+  },
+  {
+    "controller": "Dashboard",
+    "action": "Admin",
+    "url": "Pages/Dashboard/admin.html",
+    "view": "Views/Dashboard/Admin.cshtml"
+  },
+  {
+    "controller": "Demo",
+    "action": "Catalogue",
+    "url": "Pages/Demo/catalogue.html",
+    "view": "Views/Demo/Catalogue.cshtml"
+  },
+  {
+    "controller": "Demo",
+    "action": "Simulation",
+    "url": "Pages/Demo/demo.html",
+    "view": "Views/Demo/Simulation.cshtml"
+  },
+  {
+    "controller": "Meetings",
+    "action": "Legacy",
+    "url": "Pages/Meetings/meeting.html",
+    "view": "Views/Meetings/Legacy.cshtml"
+  },
+  {
+    "controller": "Documentation",
+    "action": "Database",
+    "url": "docs/database/database.html",
+    "view": "Views/Documentation/Database.cshtml"
+  }
+]

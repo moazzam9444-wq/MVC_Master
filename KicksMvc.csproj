@@ -1,0 +1,30 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Compile Remove="tests/**/*.cs" />
+    <Content Remove="tests/**;App_Data/**" />
+    <None Remove="tests/**/bin/**;tests/**/obj/**;App_Data/**" />
+    <DatabaseDocs Include="docs/database/*.js;docs/database/*.css" />
+    <DatabaseSql Include="database/*.sql" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.AspNetCore.Identity.EntityFrameworkCore" Version="10.0.14" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="10.0.14">
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+      <PrivateAssets>all</PrivateAssets>
+    </PackageReference>
+    <PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" Version="10.0.14" />
+    <PackageReference Include="System.Security.Cryptography.Pkcs" Version="10.0.14" />
+  </ItemGroup>
+  <Target Name="SyncDatabaseDocumentation" BeforeTargets="BeforeBuild;ComputeFilesToPublish">
+    <Copy SourceFiles="@(DatabaseDocs)" DestinationFolder="wwwroot/docs/database" SkipUnchangedFiles="true" />
+    <Copy SourceFiles="@(DatabaseSql)" DestinationFolder="wwwroot/database" SkipUnchangedFiles="true" />
+  </Target>
+</Project>

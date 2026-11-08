@@ -1,0 +1,12 @@
+#sqlBookingDialog{width:min(540px,calc(100vw - 32px));max-height:85vh;overflow:auto;padding:24px;border:1px solid var(--kx-line,#dce7df);border-radius:12px;background:var(--kx-surface,#fff);color:var(--kx-text,#173a29)}
+#sqlBookings .reservations-tools{align-items:center;padding:0 22px;gap:16px}#sqlBookings .reservations-tools label{display:grid;gap:8px;min-width:0}#sqlBookings .reservations-tools input{max-width:100%;box-sizing:border-box}#sqlBookings .reservations-tools select{padding:8px 12px}#sqlBookings .row-actions{display:flex;gap:10px;flex-wrap:wrap}#sqlBookings .sql-booking-notice{padding:0 22px}#sqlBookings .kicks-table-pagination{padding:16px 22px}#sqlBookings td{overflow-wrap:anywhere}#sqlBookings .records-table{min-width:0}
+@media(max-width:560px){#sqlBookings .reservations-tools{align-items:stretch;flex-direction:column;padding:0 14px}#sqlBookings .reservations-tools .reservation-search{min-width:0;width:auto}#sqlBookings .sql-booking-notice{padding:0 14px}}
+#sqlBookings .reservations-heading{display:flex;justify-content:space-between;align-items:center;gap:20px;padding:0;margin:0 0 20px}
+#sqlBookings .reservations-tools{display:flex;align-items:end;flex-wrap:wrap;gap:16px;padding:0;margin:0 0 18px}
+#sqlBookings .reservations-tools label{color:var(--kx-muted);font-size:12px}
+#sqlBookings .reservation-search{display:grid;flex:1;min-width:200px;width:auto;border:0;padding:0;background:transparent}
+#sqlBookings .reservations-tools :is(input,select){height:44px;min-height:44px;padding:10px 12px;box-sizing:border-box;border:1px solid var(--kx-line)!important;border-radius:3px;background:var(--kx-surface)!important;color:var(--kx-text);font:inherit}
+#sqlBookings .reservations-tools .dash-btn{min-height:44px;box-sizing:border-box}
+#sqlBookings .sql-booking-notice{padding:0;margin:0 0 16px;color:var(--kx-muted);font-size:12px}
+@media(max-width:800px){#sqlBookings .records-table td{background:transparent}}
+@media(max-width:560px){#sqlBookings .reservations-heading{align-items:start;flex-direction:column}#sqlBookings .reservations-tools{align-items:stretch;flex-direction:column}#sqlBookings .reservation-search{flex:none;min-width:0}}

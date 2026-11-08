@@ -1,0 +1,40 @@
+@model IReadOnlyList<AccountRowViewModel>
+<section class="dash-panel" id="serverAccounts">
+    <div class="panel-heading"><div><h2>Registration &amp; account access</h2><p>Review requests and assign one account role. Ownership proof is required for field owners.</p></div></div>
+    @if (TempData["AccountNotice"] is string notice) { <p role="status">@notice</p> }
+    @if (Model.Count == 0) { <p class="empty-dashboard">No accounts have been created yet.</p> }
+    <div class="table-wrap dashboard-table-wrap"><table class="dashboard-table">
+        <thead><tr><th>Account</th><th>Role</th><th>Status</th><th>Review</th></tr></thead>
+        <tbody>
+        @foreach (var account in Model)
+        {
+            <tr data-account-id="@account.Id"><td><strong class="table-primary">@account.Name</strong><small class="table-secondary">@account.Email</small>
+                @if (account.ReviewedAt is not null) { <small class="table-secondary">Reviewed @account.ReviewedAt.Value.ToString("u") by #@account.ReviewedBy</small> }
+            </td><td>@(account.Role ?? "Unassigned")<br /><small>Requested: @account.RequestedRole</small></td><td>@account.Status</td><td class="account-review-cell"><div class="account-review-controls">
+                @foreach (var document in account.Documents)
+                { <p><a class="dash-btn secondary" href="/Pages/Auth/accounts/documents/@document.Id" download>Download @document.FileName</a></p> }
+                @if (account.Status == "Pending")
+                {
+                    <form method="post" action="/Pages/Auth/accounts/review" class="account-review-form">
+                        @Html.AntiForgeryToken()
+                        <input type="hidden" name="Id" value="@account.Id" />
+                        <input type="hidden" name="ConcurrencyStamp" value="@account.ConcurrencyStamp" />
+                        <label><span>Assigned role</span><select name="AssignedRole"><option value="player" selected="@(account.RequestedRole != "owner")">Player</option><option value="owner" selected="@(account.RequestedRole == "owner")">Field owner</option></select></label>
+                        <button class="dash-btn" name="Decision" value="approve">Approve</button>
+                        <button class="dash-btn secondary" name="Decision" value="reject">Reject</button>
+                    </form>
+                }
+                else if (account.Role is "player" or "owner" && account.Status is "Active" or "Inactive")
+                {
+                    <form method="post" action="/Pages/Auth/accounts/status">
+                        @Html.AntiForgeryToken()
+                        <input type="hidden" name="Id" value="@account.Id" />
+                        <input type="hidden" name="ConcurrencyStamp" value="@account.ConcurrencyStamp" />
+                        <button class="dash-btn secondary" name="Status" value="@(account.Status == "Active" ? "Inactive" : "Active")">@(account.Status == "Active" ? "Deactivate" : "Reactivate")</button>
+                    </form>
+                }
+            </div></td></tr>
+        }
+        </tbody>
+    </table></div>
+</section>

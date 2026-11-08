@@ -1,0 +1,17 @@
+.local/
+App_Data/
+
+# Local configuration, dependencies and database data/backups.
+.env
+.env.*
+!.env.example
+node_modules/
+*.bak
+*.mdf
+*.ldf
+*.pfx
+
+bin/
+obj/
+.vs/
+*.user

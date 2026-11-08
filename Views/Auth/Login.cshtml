@@ -1,0 +1,193 @@
+@model LoginViewModel
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content="Sign in to your KICKS account." />
+    <title>Welcome back | KICKS</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@@400;500;600;700;800&family=Oswald:wght@@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="../../css/style.css" />
+    <link rel="stylesheet" href="../../css/auth.css?v=role-login-1" />
+    <script src="../../js/navigation.js?v=1" defer></script>
+<script src="../../js/dialogs.js?v=1" defer></script>
+<script src="../../js/full-demo.js?v=coordinated-writes-1" defer></script><script src="../../js/admin-account.js?v=restored-1" defer></script>
+    <script src="../../js/demo-data.js?v=preserve-legacy-3" defer></script>
+<script src="../../js/data-store.js?v=coordinated-writes-1" defer></script>
+    @await Html.PartialAsync("_AuthState")
+<script src="../../js/account.js?identity-1" defer></script>
+
+<script src="../../js/auth.js?v=identity-1" defer></script>
+    <link rel="stylesheet" href="../../css/account.css?v=accounts-7" />
+
+
+
+
+<script src="../../js/theme.js?v=premium-1"></script>
+<link rel="stylesheet" href="../../css/login-style.css?v=compact-upload-1">
+<script src="../../js/auth-scene.js?v=1" defer></script>
+<link rel="stylesheet" href="../../css/dialogs.css?v=1">
+
+<link rel="stylesheet" href="../../css/premium-shell.css?v=1">
+<script src="../../assets/opendesign-football/js/vendor/gsap.min.js" defer></script>
+
+<script src="../../js/visual-motion.js?v=1" defer></script>
+<link rel="stylesheet" href="../../css/kicks-system.css?v=1">
+<link rel="stylesheet" href="../../css/kicks-secondary.css?v=1">
+<script src="../../js/secondary-presentation.js?v=1" defer></script>
+<link rel="stylesheet" href="../../css/table-pagination.css?v=1"><script src="../../js/table-pagination.js?v=1" defer></script></head>
+  <body class="auth-page login-page kx-page kx-secondary">
+    <a class="auth-skip" href="#authForm">Skip to form</a>
+    <div class="auth-stadium" aria-hidden="true"></div>
+    <header class="auth-top">
+      <a class="back-home" href="../../index.html">← Home</a>
+    </header>
+    <main class="auth-shell">
+      <aside class="premium-auth-story" aria-labelledby="authStoryTitle">
+        <img src="../../assets/opendesign-football/assets/stock/hero.jpg" alt="" width="1600" height="1067" fetchpriority="high">
+        <div class="premium-auth-edition">KICKS FOOTBALL / YOUR NEXT MATCH</div>
+        <div><h2 id="authStoryTitle">THE GAME<br> STARTS <span>HERE.</span></h2><p>Your pitch. Your people. Your moment. Make time for the game you love.</p></div>
+        <div class="premium-auth-foot"><span>UNDER THE FLOODLIGHTS.</span><a href="../Fields/fields.html">Find your pitch ↗</a></div>
+      </aside>
+<section class="auth-panel premium-auth-panel" aria-labelledby="formTitle">
+        <div class="form-wrap"><p class="premium-auth-kicker">BOOK. PLAY. CONNECT.</p>
+          <a class="auth-card-brand" href="../../index.html" aria-label="KICKS home"><img src="../../assets/logo/kicks-logo.png" alt="" width="50"><span>KICKS</span></a>
+          <h1 id="formTitle">Log in</h1>
+          <p class="form-intro" id="formIntro">Welcome back to KICKS.</p>
+
+          <form id="authForm" method="post" action="/Pages/Auth/login.html" enctype="multipart/form-data" novalidate>
+            @Html.AntiForgeryToken()
+            <input type="hidden" name="ReturnTo" value="@Model.ReturnTo" />
+            @Html.ValidationSummary(false, "", new { @class = "field-error", role = "alert" })
+            <fieldset class="role-fieldset" hidden>
+              <legend>Account type</legend>
+              <div class="role-options">
+                <label
+                  ><input
+                    type="radio"
+                    name="role"
+                    value="player"
+                    checked
+                  /><span><strong>Player</strong></span></label
+                ><label
+                  ><input type="radio" name="role" value="owner" /><span
+                    ><strong>Field owner</strong></span
+                  ></label
+                >
+              </div>
+            </fieldset>
+
+            <div id="adminNotice" class="admin-notice" hidden>
+              Admin accounts are assigned by KICKS.
+            </div>
+            <div id="nameGroup" class="input-group" hidden>
+              <label for="fullName">Full name</label
+              ><input
+                id="fullName"
+                name="fullName"
+                autocomplete="name"
+                maxlength="100"
+                aria-describedby="nameError"
+                placeholder="Your full name"
+              />
+              <p class="field-error" id="nameError"></p>
+            </div>
+            <div class="input-group">
+              <label for="email">Email address</label
+              ><input
+                id="email" value="@Model.Email"
+                name="email"
+                type="email"
+                autocomplete="username"
+                required
+                maxlength="254"
+                placeholder="you@@example.com"
+                aria-describedby="emailError"
+              />
+              <p class="field-error" id="emailError"></p>
+            </div>
+            <div class="input-group">
+              <label for="password">Password</label>
+              <div class="password-input">
+                <input
+                  id="password"
+                  name="password"
+                  type="password"
+                  autocomplete="current-password"
+                  required
+                  placeholder="Enter your password"
+                  aria-describedby="passwordHint passwordError"
+                /><button
+                  class="password-toggle"
+                  type="button"
+                  data-password="password"
+                  aria-label="Show password"
+                  aria-pressed="false"
+                >
+                  Show
+                </button>
+              </div>
+              <p id="passwordHint" class="input-hint" hidden>
+                Use at least 8 characters, including a letter and a number.
+              </p>
+              <p class="field-error" id="passwordError"></p>
+            </div>
+            <div id="confirmGroup" class="input-group" hidden>
+              <label for="confirmPassword">Confirm password</label>
+              <div class="password-input">
+                <input
+                  id="confirmPassword"
+                  name="confirmPassword"
+                  type="password"
+                  autocomplete="new-password"
+                  placeholder="Re-enter your password"
+                  aria-describedby="confirmError"
+                /><button
+                  class="password-toggle"
+                  type="button"
+                  data-password="confirmPassword"
+                  aria-label="Show confirm password"
+                  aria-pressed="false"
+                >
+                  Show
+                </button>
+              </div>
+              <p class="field-error" id="confirmError"></p>
+            </div>
+            <div id="ownerProofGroup" class="input-group" hidden>
+              <label for="ownerProof">Field ownership proof / license</label>
+              <div class="proof-upload">
+                <input id="ownerProof" name="OwnerProof" type="file" accept="application/pdf,image/jpeg,image/png,image/webp" aria-describedby="proofHint proofError proofFileName" />
+                <label class="proof-upload-button" for="ownerProof"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M12 16V4m-4 4 4-4 4 4M4 15v4a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-4"/></svg><span>Attach document</span></label>
+                <span id="proofFileName" class="proof-file-name" aria-live="polite">No document selected</span>
+              </div>
+              <p id="proofHint" class="input-hint">Field license or ownership document · PDF, JPG, PNG or WebP · Max 1 MB.</p>
+              <p id="proofError" class="field-error"></p>
+            </div>
+            <p id="approvalNotice" class="input-hint" hidden>Your request will be reviewed by an admin before you can log in.</p>
+            <div id="loginExtras" hidden></div>
+            <button id="submitAuth" class="submit-auth" type="submit">
+              <span id="submitLabel">Log in</span
+              ><span aria-hidden="true">↗</span>
+            </button>
+            <p
+              id="formStatus" data-server-notice="@TempData["AuthNotice"]"
+              class="form-status"
+              role="status"
+              aria-live="polite"
+            ></p>
+          </form>
+          <p class="switch-copy" id="switchCopy">
+            New to the team? <a href="register.html">Create an account →</a>
+          </p>
+        </div>
+      </section>
+    </main>
+  <script src="../../js/site-polish.js?v=cleanup-1" defer></script>
+</body>
+</html>

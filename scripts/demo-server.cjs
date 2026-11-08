@@ -1,0 +1,1 @@
+const cp=require('node:child_process'),path=require('node:path');console.log('Starting the MVC demo at http://127.0.0.1:5602');const child=cp.spawn('dotnet',['run','--project',path.join(__dirname,'..','KicksMvc.csproj'),'--launch-profile','KicksMvc'],{stdio:'inherit'});child.on('exit',code=>process.exitCode=code);

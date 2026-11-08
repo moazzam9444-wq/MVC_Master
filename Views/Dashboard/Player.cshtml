@@ -1,0 +1,135 @@
+@model DashboardPageViewModel
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Player dashboard | KICKS</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@@400;500;600;700&family=Oswald:wght@@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../../css/style.css">
+<link rel="stylesheet" href="../../css/dashboard.css?v=dashboard-tables-3">
+
+<script src="../../js/navigation.js?v=1" defer></script>
+<script src="../../js/dialogs.js?v=1" defer></script>
+<script src="../../js/full-demo.js?v=coordinated-writes-1" defer></script><script src="../../js/admin-account.js?v=restored-1" defer></script>
+<script src="../../js/demo-data.js?v=preserve-legacy-3" defer></script>
+<script src="../../js/data-store.js?v=coordinated-writes-1" defer></script>
+@await Html.PartialAsync("_AuthState")
+<script src="../../js/account.js?identity-1" defer></script>
+<link rel="stylesheet" href="/css/server-bookings.css?v=1"><script src="/js/server-bookings.js?v=1" defer></script>
+<script src="../../js/dashboard-overview.js?v=bookings-1" defer>
+</script>
+<link rel="stylesheet" href="../../css/meetings.css?v=messages-1">
+
+<script src="../../js/messages.js?v=coordinated-writes-1" defer></script>
+<script src="../../js/dashboard-messages.js?v=1" defer></script>
+<script src="../../js/jordan-places.js?v=1" defer></script>
+<script src="../../js/place-resolver.js?v=1" defer></script>
+<script src="../../js/dashboard.js?v=bookings-1" defer>
+</script>
+<link rel="stylesheet" href="../../css/account.css?v=accounts-8">
+
+
+
+<script src="../../js/theme.js?v=premium-1"></script>
+<link rel="stylesheet" href="../../css/checkout.css?v=1">
+<script src="../../js/checkout.js?v=1" defer></script>
+<link rel="stylesheet" href="../../css/dialogs.css?v=1">
+
+<link rel="stylesheet" href="../../css/premium-shell.css?v=1">
+
+<script src="../../assets/opendesign-football/js/vendor/gsap.min.js" defer></script>
+
+<link rel="stylesheet" href="../../css/kicks-system.css?v=1">
+<link rel="stylesheet" href="../../css/kicks-secondary.css?v=1">
+<script src="../../js/secondary-presentation.js?v=1" defer></script>
+<link rel="stylesheet" href="../../css/focused-refinement.css?v=1">
+<script src="../../assets/opendesign-football/js/vendor/ScrollTrigger.min.js" defer></script>
+<script src="../../js/focused-motion.js?v=1" defer></script>
+<link rel="stylesheet" href="../../css/dashboard-workspace.css?v=1"><link rel="stylesheet" href="../../css/table-pagination.css?v=1"><script src="../../js/table-pagination.js?v=1" defer></script></head>
+<body class="account-loading kx-page kx-secondary kx-focused" data-dashboard="@Model.Role">
+<a class="dash-skip" href="#dashboardMain">Skip to dashboard</a>
+<div class="dash-layout">
+<aside class="dash-sidebar">
+<a class="dash-brand" href="../../index.html">
+<img src="../../assets/logo/kicks-logo.png" alt="">
+<span>KICKS</span>
+</a>
+<p class="side-label" id="roleLabel">
+</p>
+<nav id="dashNav" aria-label="Dashboard navigation">
+</nav>
+<a class="sidebar-profile" id="sidebarProfile" href="#profile" aria-label="My account"></a>
+<div class="side-bottom">
+<span class="side-dot">
+</span>
+<strong>Your workspace</strong>
+<p>Manage your account and football activity.</p>
+<a href="../Teams/teams.html">Teams ↗</a><a href="../Challenges/challenges.html">Challenge Me ↗</a><a href="../../index.html">← Back to website</a><button class="sidebar-logout" type="button" data-logout>Log out ↗</button>
+</div>
+</aside>
+<main id="dashboardMain" class="dash-main">
+<header class="dash-top">
+<div>
+<p class="dash-eyebrow">YOUR GAME. YOUR SPACE.</p>
+<h1 id="viewTitle">Overview</h1>
+</div>
+<a class="avatar-link" href="#profile">
+<span id="avatarLetters">
+</span>
+<div>
+<strong id="accountName">
+</strong>
+<small id="accountRole">
+</small>
+</div>
+</a>
+</header>
+
+<div id="storageWarning" class="storage-warning" hidden>Browser storage is unavailable. Allow storage before saving changes.</div>
+<div id="dashboardView">
+</div>
+<noscript>
+<p>Enable JavaScript to explore the dashboard.</p>
+</noscript>
+</main>
+</div>
+<div id="dashToast" class="dash-toast" role="status" aria-live="polite" hidden>
+</div>
+<dialog id="editorDialog" aria-labelledby="editorTitle">
+<header class="dialog-header">
+<div>
+<p class="dash-eyebrow">YOUR WORKSPACE</p>
+<h2 id="editorTitle">
+</h2>
+</div>
+<button type="button" data-close="editorDialog" aria-label="Close editor">×</button>
+</header>
+<form id="editorForm">
+<div id="editorFields" class="editor-fields">
+</div>
+<p id="editorError" class="editor-error" role="alert">
+</p>
+<div class="editor-actions">
+<button type="button" class="dash-btn secondary" data-close="editorDialog">Cancel</button>
+<button class="dash-btn">Save changes ↗</button>
+</div>
+</form>
+</dialog>
+<dialog id="confirmDialog" aria-labelledby="confirmTitle">
+<h2 id="confirmTitle">Remove this record?</h2>
+<p id="confirmText">
+</p>
+<p id="confirmError" class="editor-error" role="alert">
+</p>
+<div class="editor-actions">
+<button class="dash-btn secondary" data-close="confirmDialog">Keep record</button>
+<button class="dash-btn danger" id="confirmAction">Remove</button>
+</div>
+</dialog>
+<script src="../../js/site-polish.js?v=cleanup-1" defer></script>
+</body>
+</html>
+

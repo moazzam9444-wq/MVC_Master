@@ -1,0 +1,23 @@
+@using Microsoft.AspNetCore.Identity
+@using Microsoft.AspNetCore.Antiforgery
+@using System.Text.Json
+@using KicksMvc.Models.Entities
+@inject UserManager<User> Users
+@inject IAntiforgery Antiforgery
+@{
+    object? profile = null;
+    if (User.Identity?.IsAuthenticated == true)
+    {
+        var account = await Users.GetUserAsync(User);
+        if (account is not null)
+        {
+            var roles = await Users.GetRolesAsync(account);
+            if (account.Status == "Active" && roles.Count == 1)
+                profile = new { id = account.Id, name = account.FullName, email = account.Email,
+                    role = roles[0], status = account.Status, city = account.City, phone = account.PhoneNumber,
+                    address = account.Address, avatar = account.AvatarUrl };
+        }
+    }
+    var state = JsonSerializer.Serialize(new { profile, token = Antiforgery.GetAndStoreTokens(Context).RequestToken });
+}
+<script id="kicks-auth-state" type="application/json">@Html.Raw(state)</script>
