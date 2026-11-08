@@ -41,12 +41,8 @@ public sealed class BookingService(KicksDbContext db, FieldService fields, IData
         return field ?? throw new BookingRuleException("This field is unavailable.", true);
     }
     // All booking creation/status changes and Phase 2 field edits/archive serialize on this row.
-    private async Task<Field> LockField(int id) => await db.Fields.FromSqlInterpolated($"SELECT * FROM dbo.fields WITH (UPDLOCK,HOLDLOCK) WHERE id={id}").SingleOrDefaultAsync()
-        ?? throw new BookingRuleException("This field is unavailable.", true);
-    private async Task<bool> Occupied(int fieldId, DateTimeOffset start, DateTimeOffset end) =>
-        await db.Bookings.AnyAsync(b => b.FieldId == fieldId && (b.Status == "Pending" || b.Status == "Confirmed") && b.StartsAt < end && b.EndsAt > start)
-        || await db.OpenGames.AnyAsync(g => g.FieldId == fieldId && g.Status != "Cancelled" && g.StartsAt < end && g.EndsAt > start)
-        || await db.Tournaments.AnyAsync(t => t.FieldId == fieldId && t.Status != "Cancelled" && t.StartsAt < end && t.EndsAt > start);
+    private async Task<Field> LockField(int id) => await FieldOccupancy.Lock(db,id) ?? throw new BookingRuleException("This field is unavailable.", true);
+    private Task<bool> Occupied(int fieldId, DateTimeOffset start, DateTimeOffset end) => FieldOccupancy.Occupied(db,fieldId,start,end);
 
     public async Task<AvailabilityResult> AvailabilityAsync(int fieldId, DateOnly date, int durationMinutes = 60)
     {
@@ -54,9 +50,7 @@ public sealed class BookingService(KicksDbContext db, FieldService fields, IData
         var field = await Eligible(fieldId);
         if (date < DateOnly.FromDateTime(Now.ToOffset(TimeSpan.FromHours(3)).DateTime)) throw new BookingRuleException("Choose today or a future date.");
         var start = Start(date, 13); var end = Start(date, 23);
-        var blocks = await db.Bookings.AsNoTracking().Where(b => b.FieldId == fieldId && (b.Status == "Pending" || b.Status == "Confirmed") && b.StartsAt < end && b.EndsAt > start).Select(b => new { b.StartsAt, b.EndsAt }).ToListAsync();
-        blocks.AddRange(await db.OpenGames.AsNoTracking().Where(g => g.FieldId == fieldId && g.Status != "Cancelled" && g.StartsAt < end && g.EndsAt > start).Select(g => new { g.StartsAt, g.EndsAt }).ToListAsync());
-        blocks.AddRange(await db.Tournaments.AsNoTracking().Where(t => t.FieldId == fieldId && t.Status != "Cancelled" && t.StartsAt < end && t.EndsAt > start).Select(t => new { t.StartsAt, t.EndsAt }).ToListAsync());
+        var blocks = await FieldOccupancy.Blocks(db,fieldId,start,end);
         return new(fieldId, date, durationMinutes, "Amman (UTC+03:00)", Enumerable.Range(13, 11 - durationMinutes / 60).Select(hour => { var s = Start(date, hour); return new BookingSlot(hour, $"{hour:00}:00", s > Now && !blocks.Any(b => b.StartsAt < s.AddMinutes(durationMinutes) && b.EndsAt > s)); }).ToArray(), TotalPrice(field.HourlyPrice, durationMinutes), "JOD");
     }
     public async Task<BookingQuote> QuoteAsync(int playerId, BookingSlotInput input)

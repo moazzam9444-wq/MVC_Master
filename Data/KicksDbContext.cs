@@ -448,6 +448,7 @@ public class KicksDbContext(DbContextOptions<KicksDbContext> options) : Identity
                 table.HasCheckConstraint("CK_challenges_payment_mode_enum", "[payment_mode] IN (N'Split checkout', N'Legacy full')");
                 table.HasCheckConstraint("CK_challenges_cost_agreement_enum", "[cost_agreement] IN (N'Half each', N'Host team pays', N'Visiting team pays')");
                 table.HasCheckConstraint("CK_challenges_quoted_price", "[quoted_price] >= 0");
+                table.HasCheckConstraint("CK_challenges_duration_minutes", "[duration_minutes] IN (60,120)");
                 table.HasCheckConstraint("CK_challenges_status_enum", "[status] IN (N'Open', N'Agreed', N'Awaiting payment', N'Booked', N'Expired', N'Cancelled')");
                 table.HasCheckConstraint("CK_challenges_rule_1", "[opponent_team_id] IS NULL OR [opponent_team_id] <> [host_team_id]");
                 table.HasCheckConstraint("CK_challenges_rule_2", "[payment_mode] <> 'Split checkout' OR ([field_id] IS NOT NULL AND [quoted_price] IS NOT NULL AND [cost_agreement] = 'Half each')");
@@ -463,6 +464,7 @@ public class KicksDbContext(DbContextOptions<KicksDbContext> options) : Identity
             e.Property(x => x.Level).HasColumnName("level").HasColumnType("nvarchar(40)").IsRequired();
             e.Property(x => x.StartsAt).HasColumnName("starts_at").HasColumnType("datetimeoffset(0)").IsRequired();
             e.Property(x => x.PaymentMode).HasColumnName("payment_mode").HasColumnType("varchar(24)").IsRequired().HasDefaultValue("Split checkout").ValueGeneratedNever();
+            e.Property(x => x.DurationMinutes).HasColumnName("duration_minutes").HasColumnType("int").IsRequired().HasDefaultValue(60).ValueGeneratedNever();
             e.Property(x => x.CostAgreement).HasColumnName("cost_agreement").HasColumnType("varchar(24)").IsRequired().HasDefaultValue("Half each").ValueGeneratedNever();
             e.Property(x => x.QuotedPrice).HasColumnName("quoted_price").HasColumnType("decimal(12,2)");
             e.Property(x => x.Note).HasColumnName("note").HasColumnType("nvarchar(300)");

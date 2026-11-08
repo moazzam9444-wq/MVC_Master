@@ -2,7 +2,7 @@
 require('./test-database.cjs')();require('./test-database.cjs').assertFreePort(5618);
 const fs=require('node:fs'),path=require('node:path'),cp=require('node:child_process'),assert=require('node:assert/strict'),crypto=require('node:crypto');
 const {chromium}=require(process.env.KICKS_PLAYWRIGHT_PATH||'C:/Users/USER/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/node_modules/playwright');
-const root=path.resolve(__dirname,'..'),dir=path.join(root,'.local/teams-phase/browser'),base='http://127.0.0.1:5618',marker='teams-browser-'+crypto.randomUUID().replaceAll('-',''),title='Squad '+marker.slice(-10),password='TemporaryTeams2026!';fs.mkdirSync(dir,{recursive:true});
+const root=path.resolve(__dirname,'..'),dir=process.env.KICKS_TEST_EVIDENCE||path.join(root,'.local/teams-phase/browser'),base='http://127.0.0.1:5618',marker='teams-browser-'+crypto.randomUUID().replaceAll('-',''),title='Squad '+marker.slice(-10),password='TemporaryTeams2026!';fs.mkdirSync(dir,{recursive:true});
 let browser,server,passed=0,setup=false;const errors=[];function check(v,n){assert(v,n);passed++;console.log('PASS: '+n);}
 function fixture(action){const result=cp.spawnSync('dotnet',['tests/Auth.Integration/bin/Release/net10.0/Auth.Integration.dll','--teams-browser-'+action,marker],{encoding:'utf8',cwd:root,windowsHide:true});assert.equal(result.status,0,result.stderr||result.stdout);}
 async function team(page,id){await page.goto(base+'/Pages/Teams/teams.html?team='+id);await page.locator('#team-dialog').waitFor({state:'visible'});}

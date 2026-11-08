@@ -1,7 +1,7 @@
 // Overview cards and tables. Each account only receives its own records.
 {
   const escapeHtml = KicksStore.escape;
-  const activeEvent = (kind, row) => row.status !== "Archived" && Number.isFinite(KicksStore.endsAt(kind, row)) && !KicksStore.hasEnded(kind, row);
+  const activeEvent = (kind, row) => row._sqlActive || row.status !== "Archived" && Number.isFinite(KicksStore.endsAt(kind, row)) && !KicksStore.hasEnded(kind, row);
 
   // Count useful records for the signed-in account or admin.
   function getStatistics(role, getRecords) {
@@ -15,15 +15,15 @@
     if (role === "player")
       return [
         { title: "Your bookings", value: window.KicksBookings?.summary.total ?? bookings.length, note: "All statuses", link: "bookings", icon: "◷" },
-        { title: "Games joined", value: getRecords("memberships").filter((row) => row.status === "Joined").length, note: "Active match entries", link: "memberships", icon: "◎" },
+        { title: "Games joined", value: window.KicksActivitySummary?.total ?? 0, note: "Active match entries", link: "memberships", icon: "◎" },
         { title: "Team entries", value: getRecords("registrations").filter((row) => row.status === "Registered").length, note: "Active tournament entries", link: "registrations", icon: "◇" },
       ];
 
     if (role === "owner") {
       return [
         { title: "Your fields", value: window.KicksServerFields?.summary.total ?? 0, note: "Fields in your account", link: "fields", icon: "▦" },
-        { title: "Active matches", value: getRecords("games").filter((row) => activeEvent("games", row)).length, note: "Upcoming and in progress", link: "games", icon: "◎" },
-        { title: "Players joined", value: getRecords("memberships").filter((row) => row.status === "Joined").length, note: "Across your matches", link: "games", icon: "○" },
+        { title: "Active matches", value: window.KicksActivitySummary?.total ?? 0, note: "Upcoming and in progress", link: "games", icon: "◎" },
+        { title: "Players joined", value: window.KicksActivitySummary?.participants ?? 0, note: "Across your matches", link: "games", icon: "○" },
         { title: "Active tournaments", value: getRecords("tournaments").filter((row) => activeEvent("tournaments", row)).length, note: "On your pitches", link: "tournaments", icon: "◇" },
       ];
     }
@@ -31,7 +31,7 @@
     return [
       { title: "Football fields", value: getRecords("fields").length, note: "Across the platform", link: "fields", icon: "▦" },
       { title: "Bookings", value: bookings.length, note: "All statuses", link: "bookings", icon: "◷" },
-      { title: "Competitions", value: getRecords("games").length + getRecords("tournaments").length, note: "Games + tournaments", link: "tournaments", icon: "◇" },
+      { title: "Competitions", value: (window.KicksActivitySummary?.total ?? 0) + getRecords("tournaments").length, note: "Games + tournaments", link: "tournaments", icon: "◇" },
       { title: "Platform revenue", value: platformCommission.toFixed(2) + " JD", note: "Commissions + listing fees (local)", link: "revenue", icon: "↗" },
     ];
   }
@@ -82,7 +82,7 @@
       const activeBookings = getRecords("bookings").filter(
         (row) => row.fieldId === field.id && ["Pending", "Confirmed"].includes(row.status) && !KicksStore.hasEnded("bookings", row),
       ).length;
-      const matches = getRecords("games").filter((row) => row.fieldId === field.id && activeEvent("games", row)).length;
+      const matches = window.KicksActivitySummary?.byField?.find(x=>x.fieldId===field.id)?.count ?? 0;
       const cups = getRecords("tournaments").filter((row) => row.fieldId === field.id && activeEvent("tournaments", row)).length;
       rows += `<tr>
         <td><strong>${escapeHtml(field.name)}</strong><small class="overview-time">${escapeHtml(field.city)} · ${escapeHtml(field.type)}</small></td>
@@ -208,7 +208,7 @@
     if (role === "player") {
       chartItems = [
         { label: "Bookings", value: bookings.length },
-        { label: "Games", value: getRecords("memberships").filter((row) => row.status === "Joined").length },
+        { label: "Games", value: window.KicksActivitySummary?.total ?? 0 },
         { label: "Tournaments", value: getRecords("registrations").filter((row) => row.status === "Registered").length },
       ];
       donutItems = ["Pending", "Confirmed", "Completed", "Cancelled"].map((status) => ({
@@ -231,7 +231,7 @@
       donutTitle = "Active activity";
       donutItems = [
         { label: "Bookings", value: bookings.filter((row) => ["Pending", "Confirmed"].includes(row.status) && !KicksStore.hasEnded("bookings", row)).length },
-        { label: "Matches", value: getRecords("games").filter((row) => activeEvent("games", row)).length },
+        { label: "Matches", value: window.KicksActivitySummary?.total ?? 0 },
         { label: "Tournaments", value: getRecords("tournaments").filter((row) => activeEvent("tournaments", row)).length },
       ];
     } else {
@@ -239,7 +239,7 @@
       chartSummary = "Current records across KICKS";
       chartItems = [
         { label: "Fields", value: getRecords("fields").length },
-        { label: "Games", value: getRecords("games").length },
+        { label: "Games", value: window.KicksActivitySummary?.total ?? 0 },
         { label: "Tournaments", value: getRecords("tournaments").length },
         { label: "Bookings", value: bookings.length },
         { label: "Accounts", value: getRecords("users").length },

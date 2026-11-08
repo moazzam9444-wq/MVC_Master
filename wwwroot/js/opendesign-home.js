@@ -1,9 +1,9 @@
-/* SQL field highlights; unrelated activity modules retain their prototype stores. */
+/* SQL field and Open Game highlights; tournaments retain their separate prototype store. */
 (() => {
   'use strict';
   const store=window.KicksStore;
   const esc=value=>store.escape(String(value??''));
-  let sqlFields=[],sqlTotal=0;
+  let sqlFields=[],sqlTotal=0,sqlGames=[],gamesError=false;
   const fieldsGrid=document.getElementById('home-fields-grid');
   const gamesGrid=document.getElementById('home-open-games-grid');
   const cupsGrid=document.getElementById('home-tournaments-grid');
@@ -24,11 +24,9 @@
     return `<a class="venue ${lead?'venue--lead':'venue--sm'} fl-field-card pitch-editorial ${lead?'pitch-editorial--featured':'pitch-editorial--secondary'}" href="Pages/Fields/field-details.html?id=${encodeURIComponent(field.id)}"><div class="venue-media"><img src="${esc(image)}" alt="Football pitch at ${esc(field.name)}" width="1200" height="842" loading="lazy"><span class="venue-tag">${esc(field.type)}</span></div><div class="pitch-copy"><div class="pitch-identity"><p class="venue-meta">${esc([field.city,field.area].filter(Boolean).join(' / '))}</p><h3>${esc(field.name)}</h3><p class="venue-desc">${esc(field.description||field.amenities||field.type)}</p></div><div class="pitch-foot"><p class="venue-price"><strong>${esc(field.price)} JD</strong><span>/ hour</span></p><span class="venue-link">View pitch ${arrow}</span></div></div></a>`;
   }
   function emptyFields(){return `<div class="empty-fields-copy"><p class="kicker">Your next game is out there</p><h3>${filters?'Try another search.':'Great games start here.'}</h3><p>${filters?'No fields match this search. Try another location, date, or time.':'No fields published yet. Explore KICKS, or register as a field owner to bring your pitch to the community.'}</p><a class="text-link" href="${filters?'Pages/Fields/fields.html':'Pages/Auth/register.html'}">${filters?'Explore all fields':'List your field'} ${arrow}</a></div>`;}
-  function gameCard(game,fields){
-    const field=fields.find(f=>f.id===game.fieldId);if(!field)return '';
-    const day=new Date(`${game.date}T12:00:00+03:00`).toLocaleDateString('en-GB',{weekday:'short',day:'numeric',month:'short',timeZone:'Asia/Amman'});
-    const spots=Math.max(0,game.capacity-game.joined),live=Date.parse(`${game.date}T${game.time}:00+03:00`)<=Date.now();
-    return `<a class="game-row fl-game-row" href="Pages/OpenGames/game-details.html?id=${encodeURIComponent(game.id)}"><div class="game-date"><span>${esc(day)}</span><strong>${esc(game.time)}</strong></div><div class="game-info"><h3>${esc(game.title)}</h3><p>${esc(field.name)} · ${esc(field.city)}</p><p>${esc(field.type)} · ${esc(game.price)} JD / player</p></div><span class="game-spots">${live?'In progress':spots?`${spots} ${spots===1?'spot':'spots'} left`:'Full'}</span><span class="game-arrow">${arrow}</span></a>`;
+  function gameCard(game){
+    const start=new Date(game.startsAt),day=start.toLocaleDateString('en-GB',{weekday:'short',day:'numeric',month:'short',timeZone:'Asia/Amman'}),hour=start.toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit',timeZone:'Asia/Amman'}),spots=Math.max(0,game.capacity-game.count);
+    return `<a class="game-row fl-game-row" href="Pages/OpenGames/game-details.html?id=${encodeURIComponent(game.id)}"><div class="game-date"><span>${esc(day)}</span><strong>${esc(hour)}</strong></div><div class="game-info"><h3>${esc(game.title)}</h3><p>${esc(game.field)} · ${esc(game.city)}</p><p>${esc(game.format)} · ${game.durationMinutes} min · No payment collected</p></div><span class="game-spots">${spots?spots+' spots left':'Full'}</span><span class="game-arrow">${arrow}</span></a>`;
   }
   function cupCard(cup,fields){
     const field=fields.find(f=>f.id===cup.fieldId);if(!field)return '';
@@ -44,7 +42,7 @@
     const cards=matches.slice(0,filters?12:3);fieldsGrid.innerHTML=cards.length?cards.map(fieldCard).join(''):emptyFields();
     if(filters){resultBar.hidden=false;const description=[filters.city,filters.date,filters.time].filter(Boolean).join(' · ');status.textContent=`${sqlTotal} ${sqlTotal===1?'field matches':'fields match'}${description?' · '+description:''}.${sqlTotal>12?' Showing the first 12.':''} Explore the field details.`;}
     const byStart=(a,b)=>(a.date+a.time).localeCompare(b.date+b.time);
-    gamesGrid.innerHTML=store.publicActivities('games').sort(byStart).slice(0,3).map(g=>gameCard(g,store.list('fields'))).join('')||'<p class="home-empty">No active or upcoming games yet. Check back for your next kick-off.</p>';
+    gamesGrid.innerHTML=gamesError?'<p class="home-empty">Game information is temporarily unavailable.</p>':sqlGames.filter(g=>Date.parse(g.startsAt)>Date.now()).slice(0,3).map(gameCard).join('')||'<p class="home-empty">No upcoming games yet. Check back for your next kick-off.</p>';
     cupsGrid.innerHTML=store.publicActivities('tournaments').sort(byStart).slice(0,1).map(c=>cupCard(c,store.list('fields'))).join('')||'<p class="home-empty">No active or upcoming tournaments yet. Get your team ready for the next one.</p>';
     document.getElementById('homeCities').textContent=cities.length?cities.join(' · '):'Jordan / Everyone’s game';
     window.ScrollTrigger?.refresh();
@@ -73,6 +71,7 @@
   }
 
 
+fetch('/api/games',{cache:'no-store'}).then(r=>{if(!r.ok)throw Error();return r.json();}).then(data=>{sqlGames=data.items;renderHighlights();}).catch(()=>{gamesError=true;renderHighlights();});
 fetch('/api/fields?Sort=newest',{cache:'no-store'}).then(r=>{if(!r.ok)throw Error();return r.json();}).then(data=>{sqlTotal=data.total;sqlFields=data.items.map(f=>({...f,amenities:f.amenities.map(a=>a.name).join(', ')}));renderHighlights();}).catch(()=>{fieldsGrid.innerHTML='<p class="home-empty">Field information is temporarily unavailable.</p>';});
 fetch('/api/field-cities',{cache:'no-store'}).then(r=>r.json()).then(cities=>{for(const name of cities)if(![...city.options].some(o=>o.value===name))city.add(new Option(name,name));}).catch(()=>{});
 })();

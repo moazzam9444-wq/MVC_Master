@@ -25,7 +25,7 @@
     <link rel="stylesheet" href="../../css/style.css" />
     <link rel="stylesheet" href="../../css/fields.css" />
     <link rel="stylesheet" href="../../css/open-games.css?v=accounts-7" />
-    
+
     <script src="../../js/navigation.js?v=1" defer></script>
 <script src="../../js/dialogs.js?v=1" defer></script>
 <script src="../../js/full-demo.js?v=coordinated-writes-1" defer></script><script src="../../js/admin-account.js?v=restored-1" defer></script>
@@ -33,7 +33,7 @@
 <script src="../../js/data-store.js?v=coordinated-writes-1" defer></script>
 @await Html.PartialAsync("_AuthState")
 <script src="../../js/account.js?identity-1" defer></script>
-<script src="../../js/open-games.js?v=coordinated-writes-1" defer></script>
+
     <link rel="stylesheet" href="../../css/creative.css?v=cleanup-1" />
   <link rel="stylesheet" href="../../css/account.css?v=accounts-7">
 
@@ -41,7 +41,7 @@
 <script src="../../js/theme.js?v=premium-1"></script>
 <link rel="stylesheet" href="../../css/footer.css?v=shared-1">
 <link rel="stylesheet" href="../../css/checkout.css?v=1">
-<script src="../../js/checkout.js?v=1" defer></script>
+
 <link rel="stylesheet" href="../../css/discovery.css?v=compact-toolbar-4">
 <link rel="stylesheet" href="../../css/game-positions.css?v=1">
 <link rel="stylesheet" href="../../css/dialogs.css?v=1">
@@ -53,7 +53,7 @@
 <link rel="stylesheet" href="../../css/kicks-system.css?v=1">
 <link rel="stylesheet" href="../../css/kicks-secondary.css?v=1">
 <script src="../../js/secondary-presentation.js?v=1" defer></script>
-<link rel="stylesheet" href="../../css/table-pagination.css?v=1"><script src="../../js/table-pagination.js?v=1" defer></script></head>
+<link rel="stylesheet" href="../../css/table-pagination.css?v=1"><script src="../../js/table-pagination.js?v=1" defer></script><link rel="stylesheet" href="/css/server-activities.css?v=sql-1"><script src="/js/server-activities.js?v=sql-1" defer></script></head>
   <body class="kx-page kx-secondary">
     <a class="skip-link" href="#mainContent">Skip to content</a>
     <nav class="navbar navbar-expand-xl" aria-label="Main navigation">
@@ -83,9 +83,7 @@
         </div>
       </div>
     </nav>
-    <main id="mainContent">
-      <div id="gamesListing">
-        <section class="games-hero" aria-labelledby="gamesHeroTitle">
+    <main><section class="games-hero" aria-labelledby="gamesHeroTitle">
           <div class="container games-hero-layout">
             <div class="games-hero-copy">
               <p class="games-kicker">
@@ -145,174 +143,7 @@
               </p>
             </div>
           </div>
-        </section>
-        <section class="container games-section" aria-label="Open matches">
-          <div class="catalog-intro">
-            <div>
-              <p class="eyebrow">THERE'S A PLACE FOR YOU</p>
-              <h2>Find your next kickabout.</h2>
-            </div>
-            <p>
-              A friendly match or a little competition.<br />Pick your game and
-              bring your energy.
-            </p>
-          </div>
-          
-          <form id="gameFilters" class="game-filters">
-            <div>
-              <label for="gameCity">City</label
-              ><select id="gameCity" name="city">
-                <option value="">All cities</option>
-                <option>Amman</option>
-<option>Irbid</option>
-<option>Zarqa</option>
-<option>Ajloun</option>
-<option>Jerash</option>
-<option>Mafraq</option>
-<option>Balqa</option>
-<option>Madaba</option>
-<option>Karak</option>
-<option>Tafilah</option>
-<option>Ma'an</option>
-<option>Aqaba</option>
-              </select>
-            </div>
-            <div>
-              <label for="gameDate">Date</label
-              ><input id="gameDate" name="date" type="date" />
-            </div>
-            <div>
-              <label for="gameFormat">Match format</label
-              ><select id="gameFormat" name="format">
-                <option value="">All formats</option>
-                <option>5v5</option>
-                <option>6v6</option>
-                <option>7v7</option>
-              </select>
-            </div>
-            <div>
-              <label for="gameLevel">Level</label
-              ><select id="gameLevel" name="level">
-                <option value="">Any level</option>
-                <option>All levels</option>
-                <option>Intermediate</option>
-                <option>Competitive</option>
-              </select>
-            </div>
-            <label class="spots-check"
-              ><input type="checkbox" id="spotsOnly" name="spots" /> Spots
-              available</label
-            ><button class="reset-games" type="button" data-reset>
-              Clear filters
-            </button>
-          </form>
-          <div class="results-toolbar">
-            <div role="status" aria-live="polite">
-              <h2 id="gameCount"></h2>
-              <p>Find a match that fits your day.</p>
-            </div>
-            <div class="sort-control">
-              <label for="gameSort">Sort by</label
-              ><select id="gameSort" aria-label="Sort games">
-                <option value="soonest">Soonest first</option>
-                <option value="price">Lowest price</option>
-                <option value="spots">Most spots left</option>
-              </select>
-            </div>
-          </div>
-          <div id="gamesGrid" class="games-grid"></div>
-          <div id="gamesEmpty" class="empty-state" hidden>
-            <i class="bi bi-search" aria-hidden="true"></i>
-            <h3>No matches found</h3>
-            <p>Try a different date, city or match format.</p>
-            <button type="button" class="apply-filters" data-reset>
-              Clear search &amp; filters
-            </button>
-          </div>
-        </section>
-        <section class="fields-cta container">
-          <div class="cta-icon">
-            <i class="bi bi-calendar-check" aria-hidden="true"></i>
-          </div>
-          <div>
-            <p class="eyebrow">ALREADY HAVE YOUR TEAM?</p>
-            <h2>Your crew. Your own pitch.</h2>
-            <p>Find a field for your next team match.</p>
-          </div>
-          <a href="../Fields/fields.html">Explore fields ↗</a>
-        </section>
-      </div>
-      <section id="gameDetail" class="container games-detail" hidden>
-        <nav class="breadcrumbs" aria-label="Breadcrumb">
-          <a href="open-games.html">← All open games</a>
-        </nav>
-        <div id="missingGame" class="empty-state" hidden>
-          <h1>Game not found</h1>
-          <p>This match isn't in the catalogue.</p>
-          <a href="open-games.html">Explore open games</a>
-        </div>
-        <div id="gameDetailContent" hidden>
-          <p class="eyebrow">MEET ON THE PITCH</p>
-          <h1 id="gameTitle"></h1>
-          <p id="gameSubtitle" class="game-subtitle"></p>
-          
-          <div class="game-detail-layout">
-            <div>
-              <img id="gameImage" class="game-detail-image" alt="" />
-              <section class="game-info-panel">
-                <h2>The match plan</h2>
-                <div id="matchFacts" class="match-facts"></div>
-              </section>
-              <section class="game-info-panel">
-                <h2>Good football starts with good company.</h2>
-                <p>
-                  Come ready for a friendly, organised match. Teams are balanced
-                  at the pitch, and every player gets a chance to be part of the
-                  game.
-                </p>
-                <ul>
-                  <li>Arrive 15 minutes early for a warm-up.</li>
-                  <li>
-                    Bring water and footwear suitable for artificial turf.
-                  </li>
-                  <li>Play fair, respect everyone and enjoy the match.</li>
-                </ul>
-                <a id="gameFieldLink" class="field-detail-link"
-                  >Explore this field →</a
-                >
-                
-              </section>
-            </div>
-            <aside class="join-card">
-              <p class="eyebrow">ONE MATCH. NEW TEAMMATES.</p>
-              <div class="join-price">
-                <strong id="gamePrice"></strong> JD <span>/ player</span>
-              </div>
-              <p id="joinStatus" role="status"></p>
-              <div id="joinProgress"></div>
-              <p id="joinPlayers"></p>
-              <div class="join-summary">
-                <span>Match duration</span><strong>1 hour</strong>
-              </div>
-              <fieldset class="game-position-picker"><legend>Your playing position</legend><p>Choose the position you will play in this match.</p><div class="game-position-options"><label><input type="radio" name="playingPosition" value="Goalkeeper" required><span><b aria-hidden="true">01</b>Goalkeeper</span></label><label><input type="radio" name="playingPosition" value="Defender" required><span><b aria-hidden="true">02</b>Defender</span></label><label><input type="radio" name="playingPosition" value="Midfielder" required><span><b aria-hidden="true">03</b>Midfielder</span></label><label><input type="radio" name="playingPosition" value="Forward" required><span><b aria-hidden="true">04</b>Forward</span></label></div><p id="positionError" class="position-error" role="alert"></p></fieldset>
-              <button id="previewJoin" class="apply-filters" type="button">
-                Join game →
-              </button>
-              
-              <a href="open-games.html" class="other-games"
-                >Find another game →</a
-              >
-            </aside>
-          </div>
-        </div>
-      </section>
-      <noscript
-        ><div class="container empty-state">
-          <h2>Open games</h2>
-          <p>Enable JavaScript to explore matches.</p>
-        </div></noscript
-      >
-    </main>
+        </section>@await Html.PartialAsync("_Activities", "games")</main>
     <footer class="kicks-footer" aria-label="KICKS footer">
   <div class="kf-inner">
     <div class="kf-grid">
@@ -345,27 +176,13 @@
     <div class="kf-bottom"><p>© 2026 KICKS. All rights reserved.</p></div>
   </div>
 </footer>
-    <dialog id="joinDialog" aria-labelledby="joinDialogTitle">
-      <form method="dialog">
-        <button class="dialog-close" aria-label="Close join confirmation">×</button>
-      </form>
-      <div class="join-icon">
-        <i class="bi bi-people" aria-hidden="true"></i>
-      </div>
-      <p class="eyebrow">YOUR NEXT MATCH</p>
-      <h2 id="joinDialogTitle">You joined the game</h2>
-      <p id="joinPreviewText"></p>
-      
-      <form method="dialog">
-        <button class="apply-filters">Back to match</button>
-      </form>
-    </dialog>
+
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@@5.3.8/dist/js/bootstrap.bundle.min.js"></script>
   <script src="../../js/site-polish.js?v=cleanup-1" defer></script>
 <script src="../../js/jordan-places.js?v=1" defer></script>
 <script src="../../js/place-resolver.js?v=1" defer></script>
-<script src="../../js/discovery.js?v=audit-20261102-1" defer></script>
-<script src="../../js/nearby-catalogue.js?v=toolbar-2" defer></script>
-<script src="../../js/discovery-ui.js?v=audit-20261102-1" defer></script>
+
+
+
 </body>
 </html>

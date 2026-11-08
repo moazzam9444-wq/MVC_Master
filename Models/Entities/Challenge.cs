@@ -11,6 +11,7 @@ public class Challenge
     public string Format { get; set; } = "5v5";
     public string Level { get; set; } = string.Empty;
     public DateTimeOffset StartsAt { get; set; }
+    public int DurationMinutes { get; set; } = 60;
     public string PaymentMode { get; set; } = "Split checkout";
     public string CostAgreement { get; set; } = "Half each";
     public decimal? QuotedPrice { get; set; }

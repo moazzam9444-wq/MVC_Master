@@ -319,6 +319,11 @@ namespace KicksMvc.Data.Migrations
                         .HasColumnName("created_at")
                         .HasDefaultValueSql("SYSUTCDATETIME()");
 
+                    b.Property<int>("DurationMinutes")
+                        .HasColumnType("int")
+                        .HasDefaultValue(60)
+                        .HasColumnName("duration_minutes");
+
                     b.Property<int?>("FieldId")
                         .HasColumnType("int")
                         .HasColumnName("field_id");
@@ -388,6 +393,8 @@ namespace KicksMvc.Data.Migrations
                     b.ToTable("challenges", "dbo", t =>
                         {
                             t.HasCheckConstraint("CK_challenges_cost_agreement_enum", "[cost_agreement] IN (N'Half each', N'Host team pays', N'Visiting team pays')");
+
+                            t.HasCheckConstraint("CK_challenges_duration_minutes", "[duration_minutes] IN (60,120)");
 
                             t.HasCheckConstraint("CK_challenges_format_enum", "[format] IN (N'5v5', N'6v6', N'7v7')");
 
