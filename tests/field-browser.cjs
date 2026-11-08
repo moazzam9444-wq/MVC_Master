@@ -1,8 +1,11 @@
+require('./test-database.cjs')();
+require('./test-database.cjs').assertFreePort(5615);
 const assert=require('node:assert/strict'),fs=require('node:fs'),cp=require('node:child_process'),crypto=require('node:crypto'),path=require('node:path');
 const {chromium}=require(process.env.KICKS_PLAYWRIGHT_PATH||'C:/Users/USER/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/node_modules/playwright');
-const root=path.resolve(__dirname,'..'),dir=path.join(root,'.local/field-phase'),base='http://127.0.0.1:5615',marker='field-browser-'+crypto.randomUUID().replaceAll('-',''),password='TemporaryField2026!';
+const root=path.resolve(__dirname,'..'),dir=process.env.KICKS_TEST_EVIDENCE||path.join(root,'.local/field-phase'),base='http://127.0.0.1:5615',marker='field-browser-'+crypto.randomUUID().replaceAll('-',''),password='TemporaryField2026!';
 const fixture=mode=>{const result=cp.spawnSync('dotnet',['tests/Auth.Integration/bin/Release/net10.0/Auth.Integration.dll','--field-browser-'+mode,marker],{cwd:root,encoding:'utf8'});assert.equal(result.status,0,result.stderr||result.stdout);};
 const png=Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+jE1sAAAAASUVORK5CYII=','base64');
+fs.mkdirSync(dir,{recursive:true});
 let server,browser,passed=0;const errors=[];const check=(condition,name)=>{assert(condition,name);passed++;console.log('PASS: '+name);};
 const login=async(page,role)=>{await page.goto(base+'/Pages/Auth/login.html');await page.locator('#email').fill(marker+'-'+role+'@example.test');await page.locator('#password').fill(password);await Promise.all([page.waitForNavigation(),page.locator('#submitAuth').click()]);};
 const fields=async page=>{await page.goto(base+'/Pages/Dashboard/owner.html#fields');await page.locator('#sqlFields').waitFor();};

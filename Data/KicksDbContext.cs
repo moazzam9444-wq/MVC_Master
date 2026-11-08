@@ -510,7 +510,9 @@ public class KicksDbContext(DbContextOptions<KicksDbContext> options) : Identity
                 table.HasCheckConstraint("CK_bookings_rule_1", "[commission] + [owner_net] = [price]");
                 table.HasCheckConstraint("CK_bookings_rule_2", "[is_split] = 0 OR ([challenge_id] IS NOT NULL AND [payment_deadline] IS NOT NULL)");
                 table.HasCheckConstraint("CK_bookings_rule_3", "[payment_deadline] IS NULL OR [payment_deadline] <= [starts_at]");
-                table.HasCheckConstraint("CK_bookings_rule_4", "DATEPART(TZOFFSET,[starts_at]) = 180 AND DATEPART(HOUR,[starts_at]) BETWEEN 10 AND 22");
+                table.HasCheckConstraint("CK_bookings_rule_4", "DATEPART(TZOFFSET,[starts_at]) = 180 AND DATEPART(HOUR,[starts_at]) BETWEEN 13 AND 22");
+                table.HasCheckConstraint("CK_bookings_duration_minutes", "[duration_minutes] IN (60,120)");
+                table.HasCheckConstraint("CK_bookings_closing_time", "[ends_at] <= TODATETIMEOFFSET(DATEADD(HOUR,23,CONVERT(datetime2(0),CONVERT(date,[starts_at]))),180)");
             });
             e.HasKey("Id").HasName("PK_bookings");
             e.Property(x => x.Id).HasColumnName("id").HasColumnType("int").IsRequired().UseIdentityColumn();
@@ -519,7 +521,8 @@ public class KicksDbContext(DbContextOptions<KicksDbContext> options) : Identity
             e.Property(x => x.OwnerId).HasColumnName("owner_id").HasColumnType("int").IsRequired();
             e.Property(x => x.ChallengeId).HasColumnName("challenge_id").HasColumnType("int");
             e.Property(x => x.StartsAt).HasColumnName("starts_at").HasColumnType("datetimeoffset(0)").IsRequired();
-            e.Property(x => x.EndsAt).HasColumnName("ends_at").HasColumnType("datetimeoffset(0)").IsRequired().HasComputedColumnSql("DATEADD(HOUR, 1, [starts_at])", stored: true);
+            e.Property(x => x.DurationMinutes).HasColumnName("duration_minutes").HasColumnType("int").IsRequired().HasDefaultValue(60).ValueGeneratedNever();
+            e.Property(x => x.EndsAt).HasColumnName("ends_at").HasColumnType("datetimeoffset(0)").IsRequired().HasComputedColumnSql("DATEADD(MINUTE, [duration_minutes], [starts_at])", stored: true);
             e.Property(x => x.Price).HasColumnName("price").HasColumnType("decimal(12,2)").IsRequired();
             e.Property(x => x.CommissionRate).HasColumnName("commission_rate").HasColumnType("decimal(5,2)").IsRequired();
             e.Property(x => x.Commission).HasColumnName("commission").HasColumnType("decimal(12,2)").IsRequired();

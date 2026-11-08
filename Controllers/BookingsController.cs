@@ -15,10 +15,10 @@ public sealed class BookingsController(BookingService bookings) : Controller
     private bool Owner => User.IsInRole("owner");
 
     [AllowAnonymous, HttpGet("/api/fields/{id:int}/availability")]
-    public async Task<IActionResult> Availability(int id, DateOnly? date)
+    public async Task<IActionResult> Availability(int id, DateOnly? date, int durationMinutes = 60)
     {
         if (!ModelState.IsValid || date is null || id < 1) return BadRequest(new { message = "Choose a valid date and field." });
-        return await Execute(async () => Json(await bookings.AvailabilityAsync(id, date.Value)));
+        return await Execute(async () => Json(await bookings.AvailabilityAsync(id, date.Value, durationMinutes)));
     }
     [Authorize(Roles = "player"), HttpGet("/bookings/quote")]
     public async Task<IActionResult> Quote([FromQuery] BookingSlotInput input)
@@ -65,7 +65,7 @@ public sealed class BookingsController(BookingService bookings) : Controller
         if (!ModelState.IsValid) return InvalidInput();
         return await Execute(async () => await bookings.ChangeStatusAsync(id, UserId, Owner, input.Version, complete) ? Json(new { message = complete ? "Reservation completed." : "Reservation cancelled. History retained; no payment records changed." }) : NotFound());
     }
-    private IActionResult InvalidInput() => BadRequest(new { message = "Check the date, one-hour duration, page and submitted fields.", errors = ModelState.Values.SelectMany(v => v.Errors).Select(e => e.ErrorMessage) });
+    private IActionResult InvalidInput() => BadRequest(new { message = "Check the date, 1- or 2-hour duration, page and submitted fields.", errors = ModelState.Values.SelectMany(v => v.Errors).Select(e => e.ErrorMessage) });
     private async Task<IActionResult> Execute(Func<Task<IActionResult>> action)
     {
         try { return await action(); }

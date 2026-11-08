@@ -1,7 +1,9 @@
 'use strict';
+require('./test-database.cjs')();
 const assert=require('node:assert/strict'),cp=require('node:child_process'),fs=require('node:fs'),crypto=require('node:crypto');
 const {chromium}=require(process.env.KICKS_PLAYWRIGHT_PATH||'C:/Users/USER/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/node_modules/playwright');
-const base=process.env.KICKS_TEST_URL||'http://127.0.0.1:5612',marker='auth-browser-'+crypto.randomUUID().replaceAll('-','');
+const base=process.env.KICKS_TEST_URL,marker='auth-browser-'+crypto.randomUUID().replaceAll('-','');
+assert(base && /^http:\/\/127\.0\.0\.1:\d+$/.test(base) && !base.endsWith(':5602'),'Set KICKS_TEST_URL to the explicitly isolated application; normal port 5602 is forbidden.');
 const password='BrowserAuth2026!',playerEmail=marker+'-player@example.test',ownerEmail=marker+'-owner@example.test';
 const fixture=action=>{const r=cp.spawnSync('powershell',['-NoProfile','-ExecutionPolicy','Bypass','-File','tests/auth-browser-data.ps1','-Marker',marker,'-Action',action],{encoding:'utf8'});assert.equal(r.status,0,r.stderr);return r.stdout.trim()?JSON.parse(r.stdout.replace(/^\uFEFF/,'')):null;};
 let browser,passed=0;const ok=name=>{console.log('PASS: '+name);passed++;};

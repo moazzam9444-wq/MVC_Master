@@ -19,6 +19,8 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Filters;
 using System.Security.Cryptography;
 
+TestDatabase.RequireIsolated();
+if(args.Contains("--verify-test-isolation")){Console.WriteLine("PASS: explicit restored test database identity verified.");return;}
 if(args.Contains("--bookings"))await BookingTests.RunAsync();
 else if(args.Contains("--booking-browser-setup"))await BookingTests.FixtureAsync(args[^1],false);
 else if(args.Contains("--booking-browser-cleanup"))await BookingTests.FixtureAsync(args[^1],true);
@@ -216,6 +218,7 @@ sealed class AuthFactory : WebApplicationFactory<KicksMvc.Controllers.AuthContro
     protected override void ConfigureWebHost(IWebHostBuilder builder)
     {
         builder.UseContentRoot(ContentRoot).UseEnvironment("Development");
+        builder.UseSetting("ConnectionStrings:DefaultConnection", TestDatabase.ConnectionString);
         builder.ConfigureLogging(logging=>logging.ClearProviders());
         builder.ConfigureTestServices(services=>
         {

@@ -86,11 +86,16 @@ namespace KicksMvc.Data.Migrations
                         .HasColumnName("created_at")
                         .HasDefaultValueSql("SYSUTCDATETIME()");
 
+                    b.Property<int>("DurationMinutes")
+                        .HasColumnType("int")
+                        .HasDefaultValue(60)
+                        .HasColumnName("duration_minutes");
+
                     b.Property<DateTimeOffset>("EndsAt")
                         .ValueGeneratedOnAddOrUpdate()
                         .HasColumnType("datetimeoffset(0)")
                         .HasColumnName("ends_at")
-                        .HasComputedColumnSql("DATEADD(HOUR, 1, [starts_at])", true);
+                        .HasComputedColumnSql("DATEADD(MINUTE, [duration_minutes], [starts_at])", true);
 
                     b.Property<int>("FieldId")
                         .HasColumnType("int")
@@ -157,9 +162,13 @@ namespace KicksMvc.Data.Migrations
                         {
                             t.HasCheckConstraint("CK_bookings_cancellation_reason_enum", "[cancellation_reason] IN (N'Cancelled', N'Expired')");
 
+                            t.HasCheckConstraint("CK_bookings_closing_time", "[ends_at] <= TODATETIMEOFFSET(DATEADD(HOUR,23,CONVERT(datetime2(0),CONVERT(date,[starts_at]))),180)");
+
                             t.HasCheckConstraint("CK_bookings_commission", "[commission] >= 0");
 
                             t.HasCheckConstraint("CK_bookings_commission_rate", "[commission_rate] BETWEEN 0 AND 100");
+
+                            t.HasCheckConstraint("CK_bookings_duration_minutes", "[duration_minutes] IN (60,120)");
 
                             t.HasCheckConstraint("CK_bookings_owner_net", "[owner_net] >= 0");
 
@@ -171,7 +180,7 @@ namespace KicksMvc.Data.Migrations
 
                             t.HasCheckConstraint("CK_bookings_rule_3", "[payment_deadline] IS NULL OR [payment_deadline] <= [starts_at]");
 
-                            t.HasCheckConstraint("CK_bookings_rule_4", "DATEPART(TZOFFSET,[starts_at]) = 180 AND DATEPART(HOUR,[starts_at]) BETWEEN 10 AND 22");
+                            t.HasCheckConstraint("CK_bookings_rule_4", "DATEPART(TZOFFSET,[starts_at]) = 180 AND DATEPART(HOUR,[starts_at]) BETWEEN 13 AND 22");
 
                             t.HasCheckConstraint("CK_bookings_starts_at", "DATEPART(MINUTE,[starts_at]) = 0 AND DATEPART(SECOND,[starts_at]) = 0");
 

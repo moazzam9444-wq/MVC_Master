@@ -8,6 +8,7 @@ public class Booking
     public int OwnerId { get; set; }
     public int? ChallengeId { get; set; }
     public DateTimeOffset StartsAt { get; set; }
+    public int DurationMinutes { get; set; } = 60;
     public DateTimeOffset EndsAt { get; set; }
     public decimal Price { get; set; }
     public decimal CommissionRate { get; set; }

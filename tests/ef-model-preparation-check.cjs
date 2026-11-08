@@ -18,7 +18,7 @@ const entities = new Map(model.Entities.map(e => [e.Table, e]));
 const totals = { columns: 0, primaryKeys: 0, foreignKeys: 0, checks: 0, uniqueGuarantees: 0, indexesCovered: 0, computed: 0, literalDefaults: 0, generatedDefaults: 0 };
 assert.equal(model.Tables, 34);
 assert.equal(tables.length, 27);
-assert.equal(model.Columns, 269);
+assert.equal(model.Columns, 270);
 assert.equal(model.Relationships, 76);
 assert.equal(model.DbSets.length, 34);
 assert.deepEqual([...model.DbSets].sort(), model.Entities.map(e => e.Entity).sort());
@@ -31,7 +31,17 @@ for (const [_, name, body] of tables) {
   const retired = new Set(['password_salt','password_algorithm','password_iterations','role']);
   const columns = [...body.matchAll(/^    \[([^\]]+)\] ([^\r\n]+)/gm)]
     .filter(c => name !== 'users' || !retired.has(c[1]));
-  assert.equal(properties.size, columns.length + (name === 'users' ? 11 : 0), `${name}: unexpected property/column count`);
+  assert.equal(properties.size, columns.length + (name === 'users' ? 11 : name === 'bookings' ? 1 : 0), `${name}: unexpected property/column count`);
+  // The SQL export remains the historical baseline. Check the reviewed additive migration explicitly.
+  if(name==='bookings'){
+    const duration=properties.get('duration_minutes');
+    assert(duration && duration.Type==='int' && !duration.IsNullable && duration.DefaultValue===60 && duration.InitialValue===60 && duration.Generated==='Never');
+    totals.columns++;totals.literalDefaults++;
+    for(const [check,expression] of [
+      ['CK_bookings_duration_minutes','[duration_minutes] IN (60,120)'],
+      ['CK_bookings_closing_time','[ends_at] <= TODATETIMEOFFSET(DATEADD(HOUR,23,CONVERT(datetime2(0),CONVERT(date,[starts_at]))),180)']
+    ]){assert(e.Checks.some(c=>c.Name===check&&c.Sql===expression));totals.checks++;}
+  }
   assert.ok(e.Properties.every(p => !p.Shadow), `${name}: accidental shadow property`);
   for (const [__, column, originalDefinition] of columns) {
     const definition = name === 'users' && column === 'password_hash' ? 'nvarchar(max) NULL' : originalDefinition;
@@ -40,7 +50,7 @@ for (const [_, name, body] of tables) {
     assert.ok(p, `${name}.${column}: missing property`);
     if (definition.startsWith('AS ')) {
       totals.computed++;
-      assert.equal(p.ComputedSql, /^AS \((.+)\) PERSISTED/.exec(definition)[1]);
+      assert.equal(p.ComputedSql, name==='bookings'&&column==='ends_at'?'DATEADD(MINUTE, [duration_minutes], [starts_at])':/^AS \((.+)\) PERSISTED/.exec(definition)[1]);
       assert.equal(p.Stored, true);
       assert.equal(p.Generated, 'OnAddOrUpdate');
       assert.equal(p.ClrType, 'System.DateTimeOffset');
@@ -83,10 +93,11 @@ for (const [_, name, body] of tables) {
   }
   const checks = [...body.matchAll(/CONSTRAINT \[([^\]]+)\] CHECK \(([^\n]+)\)/g)]
     .filter(c => !['CK_users_password_iterations','CK_users_role_enum'].includes(c[1]));
-  assert.equal(e.Checks.length, checks.length);
+  assert.equal(e.Checks.length, checks.length+(name==='bookings'?2:0));
   for (const [__, checkName, expression] of checks) {
     totals.checks++;
-    assert.ok(e.Checks.some(c => c.Name === checkName && c.Sql === expression), `${checkName}: weakened/missing check`);
+    const expected=checkName==='CK_bookings_rule_4'?'DATEPART(TZOFFSET,[starts_at]) = 180 AND DATEPART(HOUR,[starts_at]) BETWEEN 13 AND 22':expression;
+    assert.ok(e.Checks.some(c => c.Name === checkName && c.Sql === expected), `${checkName}: weakened/missing check`);
   }
   const foreignKeys = [...body.matchAll(/CONSTRAINT \[([^\]]+)\] FOREIGN KEY \(([^\n]+?)\) REFERENCES \[dbo\]\.\[(\w+)\] \(([^\n]+?)\) ON DELETE NO ACTION/g)];
   assert.equal(e.ForeignKeys.length, foreignKeys.length, `${name}: duplicated/missing FK`);
@@ -137,7 +148,7 @@ assert.deepEqual(alternateKeys, [
   'UQ_tournament_matches_tournament_id_id',
   'UQ_tournament_registrations_tournament_id_id'
 ]);
-assert.deepEqual(totals, {columns:226,primaryKeys:27,foreignKeys:68,checks:75,uniqueGuarantees:15,indexesCovered:60,computed:3,literalDefaults:36,generatedDefaults:16});
+assert.deepEqual(totals, {columns:227,primaryKeys:27,foreignKeys:68,checks:77,uniqueGuarantees:15,indexesCovered:60,computed:3,literalDefaults:37,generatedDefaults:16});
 const user = entities.get('users');
 for (const retired of ['password_salt','password_algorithm','password_iterations','role'])
   assert.ok(!user.Properties.some(p => p.Column === retired));

@@ -17,15 +17,23 @@ public sealed class BookingRuleException(string message, bool conflict = false) 
 
 public sealed class BookingService(KicksDbContext db, FieldService fields, IDataProtectionProvider protection, TimeProvider clock)
 {
-    private readonly IDataProtector quotes = protection.CreateProtector("Kicks.BookingQuote.v1");
+    private readonly IDataProtector quotes = protection.CreateProtector("Kicks.BookingQuote.v2");
     private readonly IDataProtector versions = protection.CreateProtector("Kicks.BookingVersion.v1");
     private DateTimeOffset Now => clock.GetUtcNow();
-    private sealed record QuotePayload(int PlayerId, int FieldId, DateTimeOffset Start, decimal Price, int HistoryWatermark, DateTimeOffset ExpiresAt);
+    private sealed record QuotePayload(int PlayerId, int FieldId, DateTimeOffset Start, int DurationMinutes, decimal Price, int HistoryWatermark, DateTimeOffset ExpiresAt);
     private static DateTimeOffset Start(DateOnly date, int hour) => new(date.ToDateTime(new TimeOnly(hour, 0)), TimeSpan.FromHours(3));
     private static void ValidateSlot(BookingSlotInput input)
     {
-        if (input.Date is null || input.Hour is < 10 or > 22 || input.DurationMinutes != 60 || input.FieldId < 1)
-            throw new BookingRuleException("Choose a valid field, date and one-hour slot from 10:00 to 22:00 (Amman).");
+        if (input.Date is null || input.Hour is < 13 or > 22 || input.DurationMinutes is not (60 or 120) || input.FieldId < 1
+            || input.Hour + input.DurationMinutes / 60 > 23)
+            throw new BookingRuleException("Choose a 1- or 2-hour session starting on a full hour from 13:00 and ending by 23:00 (Amman).");
+    }
+    private static decimal TotalPrice(decimal hourlyPrice, int durationMinutes)
+    {
+        var hours = durationMinutes / 60m;
+        if (durationMinutes is not (60 or 120) || hourlyPrice < 0 || hourlyPrice > 9999999999.99m / hours)
+            throw new BookingRuleException("The reservation price is outside the supported range. Contact the field owner.");
+        return decimal.Round(hourlyPrice * hours, 2, MidpointRounding.AwayFromZero);
     }
     private async Task<Field> Eligible(int fieldId)
     {
@@ -40,25 +48,26 @@ public sealed class BookingService(KicksDbContext db, FieldService fields, IData
         || await db.OpenGames.AnyAsync(g => g.FieldId == fieldId && g.Status != "Cancelled" && g.StartsAt < end && g.EndsAt > start)
         || await db.Tournaments.AnyAsync(t => t.FieldId == fieldId && t.Status != "Cancelled" && t.StartsAt < end && t.EndsAt > start);
 
-    public async Task<AvailabilityResult> AvailabilityAsync(int fieldId, DateOnly date)
+    public async Task<AvailabilityResult> AvailabilityAsync(int fieldId, DateOnly date, int durationMinutes = 60)
     {
-        await Eligible(fieldId);
+        ValidateSlot(new() { FieldId = fieldId, Date = date, Hour = 13, DurationMinutes = durationMinutes });
+        var field = await Eligible(fieldId);
         if (date < DateOnly.FromDateTime(Now.ToOffset(TimeSpan.FromHours(3)).DateTime)) throw new BookingRuleException("Choose today or a future date.");
-        var start = Start(date, 10); var end = Start(date, 22).AddHours(1);
+        var start = Start(date, 13); var end = Start(date, 23);
         var blocks = await db.Bookings.AsNoTracking().Where(b => b.FieldId == fieldId && (b.Status == "Pending" || b.Status == "Confirmed") && b.StartsAt < end && b.EndsAt > start).Select(b => new { b.StartsAt, b.EndsAt }).ToListAsync();
         blocks.AddRange(await db.OpenGames.AsNoTracking().Where(g => g.FieldId == fieldId && g.Status != "Cancelled" && g.StartsAt < end && g.EndsAt > start).Select(g => new { g.StartsAt, g.EndsAt }).ToListAsync());
         blocks.AddRange(await db.Tournaments.AsNoTracking().Where(t => t.FieldId == fieldId && t.Status != "Cancelled" && t.StartsAt < end && t.EndsAt > start).Select(t => new { t.StartsAt, t.EndsAt }).ToListAsync());
-        return new(fieldId, date, 60, "Amman (UTC+03:00)", Enumerable.Range(10, 13).Select(hour => { var s = Start(date, hour); return new BookingSlot(hour, $"{hour:00}:00", s > Now && !blocks.Any(b => b.StartsAt < s.AddHours(1) && b.EndsAt > s)); }).ToArray());
+        return new(fieldId, date, durationMinutes, "Amman (UTC+03:00)", Enumerable.Range(13, 11 - durationMinutes / 60).Select(hour => { var s = Start(date, hour); return new BookingSlot(hour, $"{hour:00}:00", s > Now && !blocks.Any(b => b.StartsAt < s.AddMinutes(durationMinutes) && b.EndsAt > s)); }).ToArray(), TotalPrice(field.HourlyPrice, durationMinutes), "JOD");
     }
     public async Task<BookingQuote> QuoteAsync(int playerId, BookingSlotInput input)
     {
         ValidateSlot(input); var start = Start(input.Date!.Value, input.Hour);
         if (start <= Now) throw new BookingRuleException("Choose a future date and time.");
         var field = await Eligible(input.FieldId);
-        if (await Occupied(field.Id, start, start.AddHours(1))) throw new BookingRuleException("This slot is no longer available. Choose another time.", true);
-        var watermark = await db.Bookings.Where(b => b.UserId == playerId && b.FieldId == field.Id && b.StartsAt == start).MaxAsync(b => (int?)b.Id) ?? 0;
-        var payload = new QuotePayload(playerId, field.Id, start, field.HourlyPrice, watermark, Now.AddMinutes(15));
-        return new(field.Id, field.Name, start, start.AddHours(1), 60, field.HourlyPrice, "JOD", quotes.Protect(JsonSerializer.Serialize(payload)), payload.ExpiresAt);
+        if (await Occupied(field.Id, start, start.AddMinutes(input.DurationMinutes))) throw new BookingRuleException("This slot is no longer available. Choose another time.", true);
+        var watermark = await db.Bookings.Where(b => b.UserId == playerId && b.FieldId == field.Id && b.StartsAt == start && b.DurationMinutes == input.DurationMinutes).MaxAsync(b => (int?)b.Id) ?? 0;
+        var payload = new QuotePayload(playerId, field.Id, start, input.DurationMinutes, TotalPrice(field.HourlyPrice, input.DurationMinutes), watermark, Now.AddMinutes(15));
+        return new(field.Id, field.Name, start, start.AddMinutes(input.DurationMinutes), input.DurationMinutes, payload.Price, "JOD", quotes.Protect(JsonSerializer.Serialize(payload)), payload.ExpiresAt);
     }
     public async Task<(BookingDisplay Booking, bool Replay)> CreateAsync(int playerId, string quoteToken)
     {
@@ -66,25 +75,29 @@ public sealed class BookingService(KicksDbContext db, FieldService fields, IData
         try { payload = JsonSerializer.Deserialize<QuotePayload>(quotes.Unprotect(quoteToken)) ?? throw new CryptographicException(); }
         catch (Exception error) when (error is CryptographicException or JsonException or ArgumentException) { throw new BookingRuleException("The reservation quote is invalid. Select the slot again."); }
         if (payload.PlayerId != playerId) throw new BookingRuleException("This quote belongs to another session.");
+        ValidateSlot(new() { FieldId = payload.FieldId, Date = DateOnly.FromDateTime(payload.Start.DateTime), Hour = payload.Start.Hour, DurationMinutes = payload.DurationMinutes });
+        if (payload.Start.Offset != TimeSpan.FromHours(3) || payload.Start.TimeOfDay.Ticks % TimeSpan.TicksPerHour != 0)
+            throw new BookingRuleException("The reservation quote has an invalid Amman start time. Select the slot again.");
         await using var transaction = await db.Database.BeginTransactionAsync(); await LockField(payload.FieldId);
         // A signed history watermark makes the first matching persisted result the durable replay result.
         // Cancelled results are returned too: an old confirmation cannot recreate a cancelled booking.
-        var previous = await db.Bookings.AsNoTracking().Where(b => b.UserId == playerId && b.FieldId == payload.FieldId && b.StartsAt == payload.Start && b.Id > payload.HistoryWatermark).OrderBy(b => b.Id).FirstOrDefaultAsync();
+        var previous = await db.Bookings.AsNoTracking().Where(b => b.UserId == playerId && b.FieldId == payload.FieldId && b.StartsAt == payload.Start && b.DurationMinutes == payload.DurationMinutes && b.Id > payload.HistoryWatermark).OrderBy(b => b.Id).FirstOrDefaultAsync();
         if (previous is not null) { await transaction.CommitAsync(); return ((await GetAsync(previous.Id, playerId, false))!, true); }
         if (payload.ExpiresAt < Now || payload.Start <= Now) throw new BookingRuleException("This quote expired. Select the date and slot again.", true);
         var field = await Eligible(payload.FieldId);
-        if (field.HourlyPrice != payload.Price) throw new BookingRuleException("The field price changed. Review the new price before confirming.", true);
-        if (await Occupied(field.Id, payload.Start, payload.Start.AddHours(1))) throw new BookingRuleException("This slot was just reserved. Choose another time.", true);
+        if (TotalPrice(field.HourlyPrice, payload.DurationMinutes) != payload.Price) throw new BookingRuleException("The field price changed. Review the new price before confirming.", true);
+        if (await Occupied(field.Id, payload.Start, payload.Start.AddMinutes(payload.DurationMinutes))) throw new BookingRuleException("This slot was just reserved. Choose another time.", true);
         var booking = new Booking
         {
             FieldId = field.Id,
             UserId = playerId,
             OwnerId = field.OwnerId,
             StartsAt = payload.Start,
-            Price = field.HourlyPrice,
+            DurationMinutes = payload.DurationMinutes,
+            Price = payload.Price,
             CommissionRate = 0,
             Commission = 0,
-            OwnerNet = field.HourlyPrice,
+            OwnerNet = payload.Price,
             Status = "Confirmed",
             IsSplit = false
         };
@@ -92,10 +105,10 @@ public sealed class BookingService(KicksDbContext db, FieldService fields, IData
         return ((await GetAsync(booking.Id, playerId, false))!, false);
     }
     private IQueryable<Booking> Scoped(int userId, bool owner) => owner ? db.Bookings.Where(b => b.OwnerId == userId && b.Field.OwnerId == userId) : db.Bookings.Where(b => b.UserId == userId);
-    private string Stamp(Booking b) => Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(JsonSerializer.Serialize(new { b.Id, b.FieldId, b.OwnerId, b.UserId, b.StartsAt, b.EndsAt, b.Price, b.Status, b.CancelledBy, b.CancelledAt, b.CancellationReason }))));
+    private string Stamp(Booking b) => Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(JsonSerializer.Serialize(new { b.Id, b.FieldId, b.OwnerId, b.UserId, b.StartsAt, b.EndsAt, b.DurationMinutes, b.Price, b.Status, b.CancelledBy, b.CancelledAt, b.CancellationReason }))));
     private string Version(Booking b) => versions.Protect(Stamp(b));
     private static bool Simple(Booking b) => !b.IsSplit && b.ChallengeId is null && b.Teams.Count == 0 && b.Shares.Count == 0;
-    private BookingDisplay Display(Booking b, bool owner) => new(b.Id, b.FieldId, b.Field.Name, b.Field.City, b.Field.Area, b.Player.FullName, b.StartsAt, b.EndsAt, 60, b.Price, b.Status, b.EndsAt <= Now,
+    private BookingDisplay Display(Booking b, bool owner) => new(b.Id, b.FieldId, b.Field.Name, b.Field.City, b.Field.Area, b.Player.FullName, b.StartsAt, b.EndsAt, b.DurationMinutes, b.Price, b.Status, b.EndsAt <= Now,
         Simple(b) && (owner ? (b.Status is "Pending" or "Confirmed") && b.StartsAt > Now : b.Status == "Confirmed" && b.StartsAt - Now >= TimeSpan.FromHours(3)),
         Simple(b) && owner && b.Status == "Confirmed" && b.EndsAt <= Now, Version(b), b.CancellationReason, b.CancelledAt);
     public async Task<BookingDisplay?> GetAsync(int id, int userId, bool owner)

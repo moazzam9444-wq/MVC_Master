@@ -1,13 +1,16 @@
 'use strict';
+require('./test-database.cjs')();
+require('./test-database.cjs').assertFreePort(5613);
 const assert=require('node:assert/strict'),cp=require('node:child_process'),fs=require('node:fs'),crypto=require('node:crypto'),path=require('node:path');
 const {chromium}=require(process.env.KICKS_PLAYWRIGHT_PATH||'C:/Users/USER/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/node_modules/playwright');
-const root=path.resolve(__dirname,'..'),base=process.env.KICKS_TEST_URL||'http://127.0.0.1:5602',reviewBase='http://127.0.0.1:5613';
+const root=path.resolve(__dirname,'..'),base=process.env.KICKS_TEST_URL,reviewBase='http://127.0.0.1:5613';
+assert(base && /^http:\/\/127\.0\.0\.1:\d+$/.test(base) && !base.endsWith(':5602'),'Set KICKS_TEST_URL to the isolated application; the normal port 5602 is forbidden.');
 const marker='auth-browser-'+crypto.randomUUID().replaceAll('-',''),reviewToken=crypto.randomBytes(32).toString('hex');
 const password='FinalBrowserAuth2026!',ownerEmail=marker+'-owner@example.test',playerEmail=marker+'-player@example.test';
-const evidence=path.join(root,'.local/final-auth');fs.mkdirSync(evidence,{recursive:true});
+const evidence=process.env.KICKS_TEST_EVIDENCE||path.join(root,'.local/final-auth');fs.mkdirSync(evidence,{recursive:true});
 let bridge,browser,passed=0,failed=0;const results=[],errors=[];
 function check(condition,name){assert(condition,name);passed++;results.push(name);console.log('PASS: '+name);}
-function fixture(action){const r=cp.spawnSync('powershell',['-NoProfile','-ExecutionPolicy','Bypass','-File','tests/auth-browser-data.ps1','-Marker',marker,'-Action',action],{cwd:root,encoding:'utf8'});assert.equal(r.status,0,r.stderr);return r.stdout.trim()?JSON.parse(r.stdout.replace(/^\uFEFF/,'')):[];}
+function fixture(action){const r=cp.spawnSync('pwsh',['-NoProfile','-File','tests/auth-browser-data.ps1','-Marker',marker,'-Action',action],{cwd:root,encoding:'utf8'});assert.equal(r.status,0,r.stderr);return r.stdout.trim()?JSON.parse(r.stdout.replace(/^\uFEFF/,'')):[];}
 const record=email=>fixture('Inspect').find(row=>row.email===email);
 function proofPdf(){
  const objects=['<</Type/Catalog/Pages 2 0 R>>','<</Type/Pages/Kids[3 0 R]/Count 1>>','<</Type/Page/Parent 2 0 R/MediaBox[0 0 300 200]/Resources<<>>/Contents 4 0 R>>','<</Length 0>>\nstream\n\nendstream'];

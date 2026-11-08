@@ -1,5 +1,6 @@
 .local/
 App_Data/
+appsettings.Development.json
 
 # Local configuration, dependencies and database data/backups.
 .env

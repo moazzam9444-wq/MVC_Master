@@ -4,7 +4,8 @@ param(
 )
 $ErrorActionPreference = 'Stop'
 Add-Type -AssemblyName System.Data
-$connection = New-Object System.Data.SqlClient.SqlConnection 'Server=localhost;Database=Kicks;Trusted_Connection=True;TrustServerCertificate=True;'
+. (Join-Path $PSScriptRoot 'require-test-database.ps1')
+$connection = New-Object System.Data.SqlClient.SqlConnection $TestConnectionString
 $connection.Open()
 try {
     $command = $connection.CreateCommand()
