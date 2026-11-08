@@ -21,7 +21,10 @@ using System.Security.Cryptography;
 
 TestDatabase.RequireIsolated();
 if(args.Contains("--verify-test-isolation")){Console.WriteLine("PASS: explicit restored test database identity verified.");return;}
-if(args.Contains("--bookings"))await BookingTests.RunAsync();
+if(args.Contains("--teams"))await TeamTests.Run();
+else if(args.Contains("--teams-browser-setup"))await TeamTests.Fixture(args[^1],false);
+else if(args.Contains("--teams-browser-cleanup"))await TeamTests.Fixture(args[^1],true);
+else if(args.Contains("--bookings"))await BookingTests.RunAsync();
 else if(args.Contains("--booking-browser-setup"))await BookingTests.FixtureAsync(args[^1],false);
 else if(args.Contains("--booking-browser-cleanup"))await BookingTests.FixtureAsync(args[^1],true);
 else if (args.Contains("--fields")) await FieldTests.RunAsync();
@@ -78,7 +81,9 @@ static class AuthTests
             }
             // Public routes render; each of the three protected dashboards challenges anonymous visitors.
             foreach (var route in new[]{"/index.html","/Pages/About/about.html","/Pages/Contact/contact.html","/Pages/Fields/fields.html","/Pages/Fields/field-details.html","/Pages/OpenGames/open-games.html","/Pages/OpenGames/game-details.html","/Pages/Teams/teams.html","/Pages/Challenges/challenges.html","/Pages/Tournaments/tournaments.html","/Pages/Tournaments/tournament-details.html","/Pages/Meetings/meeting.html",Login,Register,"/Pages/Demo/catalogue.html","/Pages/Demo/demo.html","/docs/database/database.html"})
-            { using var response = await visitor.GetAsync(route); Check(response.StatusCode == HttpStatusCode.OK, "MVC renders " + route); }
+            { using var response = await visitor.GetAsync(route);
+              if(route=="/Pages/Teams/teams.html")Check(response.StatusCode==HttpStatusCode.Redirect&&response.Headers.Location!.ToString().Contains("login.html"),"Phase 4 Teams page requires an authenticated player");
+              else Check(response.StatusCode == HttpStatusCode.OK, "MVC renders " + route); }
             foreach(var role in new[]{"player","owner","admin"})
             { using var response=await visitor.GetAsync($"/Pages/Dashboard/{role}.html"); Check(response.StatusCode==HttpStatusCode.Redirect && response.Headers.Location!.ToString().Contains("login.html"),"anonymous dashboard challenge: "+role); }
             using(var missingToken = await visitor.PostAsync(Register,new FormUrlEncodedContent(Registration(marker+"-csrf@example.test"))))

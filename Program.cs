@@ -46,6 +46,8 @@ builder.Services.AddIdentity<User, IdentityRole<int>>(options =>
     .AddClaimsPrincipalFactory<KicksClaimsPrincipalFactory>();
 builder.Services.AddScoped<OwnershipDocumentStore>();
 builder.Services.AddScoped<FieldService>();
+builder.Services.AddScoped<KicksMvc.Services.Teams.TeamService>();
+builder.Services.AddScoped<KicksMvc.Services.Teams.TeamLogoStore>();
 builder.Services.AddScoped<FieldImageStore>();
 builder.Services.AddSingleton(TimeProvider.System);
 builder.Services.AddScoped<BookingService>();

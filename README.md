@@ -53,7 +53,9 @@ Booking and field availability use SQL Server: exactly 1- or 2-hour sessions wit
 
 Mutating SQL/browser suites now require `KICKS_TEST_CONNECTION` explicitly targeting a separately restored local database named `Kicks_BookingTest_<yyyyMMdd>_<8 lowercase hexadecimal characters>`. They refuse the original `Kicks` database. Authentication browser suites also require `KICKS_TEST_URL` for the isolated application and reject the normal port 5602. Set these only in the test process; keep normal development configuration pointed at `Kicks`.
 
-Teams, tournaments, open games, challenges, messages and payments retain their separate prototype workflows for later phases. Migrated field reservations never write prototype bookings or fake payments. Profile editing/password changes remain deferred.
+Teams management now uses SQL Server through the existing Teams page: player-created squads, captain membership, profiles, editing, join requests, approval/rejection, departure/removal, captain transfer and private logo storage. Each player belongs to at most one team, matching the existing schema. See [Phase 4 completion and verification](docs/backend/TEAMS-COMPLETE.md).
+
+Tournaments, open games, challenges, messages and payments retain their separate prototype workflows for later phases. Migrated reservations and Teams management never write prototype booking/team persistence or fake payments. Profile editing/password changes remain deferred.
 
 Field amenities were initialized explicitly once with six reference choices. For another development environment with the same reviewed schema, the idempotent reference-data command is `dotnet run --project KicksMvc.csproj --launch-profile KicksMvc -- --initialize-field-amenities`. Ordinary startup never runs this command or changes the schema. Back up `App_Data/field-images` with SQL; these public venue images are separate from private ownership documents.
 
