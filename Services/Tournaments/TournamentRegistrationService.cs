@@ -24,13 +24,16 @@ public sealed partial class TournamentService
         await using var tx=await db.Database.BeginTransactionAsync();var team=await CaptainTeam(actor);var(t,field)=await Gate(id);Modern(t);await Eligible(field.Id);
         var existing=await db.TournamentRegistrations.SingleOrDefaultAsync(r=>r.TournamentId==id&&r.TeamId==team.Id);
         if(existing?.Status=="Registered"){await tx.CommitAsync();return true;}
+        if(existing?.Status=="Pending"&&existing.PaymentDeadline>rules.Now){await tx.CommitAsync();return true;}
+        if(existing is not null)await payments.Cancel(registrationId:existing.Id);
+        if(existing is not null&&await db.GatewayPayments.AnyAsync(p=>p.RegistrationId==existing.Id&&p.Status=="Paid"))throw new ActivityException("This paid entry requires manual financial review before re-registration.");
         if(!RegistrationOpen(t))throw new ActivityException("Tournament registration is not open, is closed, or the draw has been locked.");if(team.Format!=field.Format)throw new ActivityException("Your team's format must match the tournament field.",400);
-        if(await db.TournamentRegistrations.CountAsync(r=>r.TournamentId==id&&r.Status=="Registered")>=t.Capacity)throw new ActivityException("Tournament registration is full.");
+        if(await db.TournamentRegistrations.CountAsync(r=>r.TournamentId==id&&(r.Status=="Registered"||r.Status=="Pending"&&r.PaymentDeadline>rules.Now))>=t.Capacity)throw new ActivityException("Tournament registration is full.");
         if(existing is null)
         {
             var roster=await db.TeamMembers.Where(m=>m.TeamId==team.Id).OrderBy(m=>m.UserId).Select(m=>new{m.UserId,m.Position,m.User.FullName,m.User.Status,Player=db.UserRoles.Any(ur=>ur.UserId==m.UserId&&db.Roles.Any(r=>r.Id==ur.RoleId&&r.Name=="player"))}).ToListAsync();
             if(roster.Any(m=>m.Status!="Active"||!m.Player))throw new ActivityException("All players in the registered roster must be Active players.");var ids=roster.Select(m=>m.UserId).ToArray();
-            if(await db.RegistrationPlayers.AnyAsync(p=>ids.Contains(p.UserId)&&p.Registration.TournamentId==id&&p.Registration.Status=="Registered"&&p.Registration.TeamId!=team.Id))throw new ActivityException("A roster player already belongs to another registered entry in this tournament.");
+            if(await db.RegistrationPlayers.AnyAsync(p=>ids.Contains(p.UserId)&&p.Registration.TournamentId==id&&(p.Registration.Status=="Registered"||p.Registration.Status=="Pending"&&p.Registration.PaymentDeadline>rules.Now)&&p.Registration.TeamId!=team.Id))throw new ActivityException("A roster player already belongs to another registered entry in this tournament.");
             var captain=await db.Users.AsNoTracking().SingleAsync(u=>u.Id==actor);
             existing=new TournamentRegistration{TournamentId=id,TeamId=team.Id,CaptainId=actor,TeamNameSnapshot=team.Name,CaptainNameSnapshot=captain.FullName,EmailSnapshot=captain.Email!};
             foreach(var m in roster)existing.Players.Add(new(){UserId=m.UserId,NameSnapshot=m.FullName,Position=m.Position});db.TournamentRegistrations.Add(existing);
@@ -38,10 +41,11 @@ public sealed partial class TournamentService
         {
             var ids=await db.RegistrationPlayers.Where(p=>p.RegistrationId==existing.Id).Select(p=>p.UserId).ToListAsync();
             if(await db.Users.AnyAsync(u=>ids.Contains(u.Id)&&(u.Status!="Active"||!db.UserRoles.Any(ur=>ur.UserId==u.Id&&db.Roles.Any(r=>r.Id==ur.RoleId&&r.Name=="player")))))throw new ActivityException("The frozen entry roster must contain Active players before rejoining.");
-            if(await db.RegistrationPlayers.AnyAsync(p=>ids.Contains(p.UserId)&&p.Registration.TournamentId==id&&p.Registration.TeamId!=team.Id&&p.Registration.Status=="Registered"))throw new ActivityException("A frozen roster player already belongs to another active entry.");
+            if(await db.RegistrationPlayers.AnyAsync(p=>ids.Contains(p.UserId)&&p.Registration.TournamentId==id&&p.Registration.TeamId!=team.Id&&(p.Registration.Status=="Registered"||p.Registration.Status=="Pending"&&p.Registration.PaymentDeadline>rules.Now)))throw new ActivityException("A frozen roster player already belongs to another active entry.");
             existing.Status="Registered"; // Preserve original entry/roster snapshots and last withdrawal audit.
         }
-        await db.SaveChangesAsync();await tx.CommitAsync();return false;
+        if(t.EntryFee>0){existing.Status="Pending";existing.PaymentDeadline=payments.Deadline(t.RegistrationClosesAt!.Value,t.EntryFee);}else{existing.Status="Registered";existing.PaymentDeadline=null;}
+        await db.SaveChangesAsync();await payments.Add(existing,t.EntryFee,actor);await tx.CommitAsync();return false;
     }
     public async Task Withdraw(int actor,int id)
     {
@@ -49,7 +53,7 @@ public sealed partial class TournamentService
         var r=await db.TournamentRegistrations.SingleOrDefaultAsync(r=>r.TournamentId==id&&r.TeamId==team.Id)??throw new ActivityException("Team entry not found.",404);
         if(r.Status=="Withdrawn"){await tx.CommitAsync();return;}
         if(!RegistrationOpen(t)||await db.TournamentMatches.AnyAsync(m=>m.TournamentId==id))throw new ActivityException("Teams may withdraw only before registration closes and before the draw is locked.");
-        r.Status="Withdrawn";r.WithdrawnAt=rules.Now;r.WithdrawnBy=actor;await db.SaveChangesAsync();await tx.CommitAsync();
+        r.Status="Withdrawn";r.WithdrawnAt=rules.Now;r.WithdrawnBy=actor;await payments.Cancel(registrationId:r.Id);await db.SaveChangesAsync();await tx.CommitAsync();
     }
     public async Task Generate(int actor,int id,string version)
     {

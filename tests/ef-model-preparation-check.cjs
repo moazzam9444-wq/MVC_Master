@@ -16,11 +16,11 @@ const same = (a, b) => JSON.stringify(a) === JSON.stringify(b);
 const tables = [...sql.matchAll(/CREATE TABLE \[dbo\]\.\[(\w+)\] \(\r?\n([\s\S]*?)\r?\n\);/g)];
 const entities = new Map(model.Entities.map(e => [e.Table, e]));
 const totals = { columns: 0, primaryKeys: 0, foreignKeys: 0, checks: 0, uniqueGuarantees: 0, indexesCovered: 0, computed: 0, literalDefaults: 0, generatedDefaults: 0 };
-assert.equal(model.Tables, 34);
+assert.equal(model.Tables, 37);
 assert.equal(tables.length, 27);
-assert.equal(model.Columns, 284);
-assert.equal(model.Relationships, 76);
-assert.equal(model.DbSets.length, 34);
+assert.equal(model.Columns, 308);
+assert.equal(model.Relationships, 80);
+assert.equal(model.DbSets.length, 37);
 assert.deepEqual([...model.DbSets].sort(), model.Entities.map(e => e.Entity).sort());
 for (const [_, name, body] of tables) {
   const e = entities.get(name);
@@ -31,7 +31,8 @@ for (const [_, name, body] of tables) {
   const retired = new Set(['password_salt','password_algorithm','password_iterations','role']);
   const columns = [...body.matchAll(/^    \[([^\]]+)\] ([^\r\n]+)/gm)]
     .filter(c => name !== 'users' || !retired.has(c[1]));
-  assert.equal(properties.size, columns.length + (name === 'users' ? 11 : ['bookings','challenges'].includes(name) ? 1 : name==='tournaments'?5:name==='tournament_matches'?8:0), `${name}: unexpected property/column count`);
+  assert.equal(properties.size, columns.length + (name === 'users' ? 11 : ['bookings','challenges','tournament_registrations'].includes(name) ? 1 : name==='tournaments'?5:name==='tournament_matches'?8:0), `${name}: unexpected property/column count`);
+  if(name==='tournament_registrations'){const p=properties.get('payment_deadline');assert(p&&p.IsNullable&&p.Type==='datetimeoffset(0)'&&!p.HasDefault);totals.columns++;}
   // The SQL export remains the historical baseline. Check the reviewed additive migration explicitly.
   if(['tournaments','tournament_matches'].includes(name)){
     const expected=name==='tournaments'?{creation_key:'uniqueidentifier',description:'nvarchar(2000)',match_duration_minutes:'int',registration_opens_at:'datetimeoffset(0)',registration_closes_at:'datetimeoffset(0)'}:{starts_at:'datetimeoffset(0)',duration_minutes:'int',ends_at:'datetimeoffset(0)',status:'varchar(24)',home_score:'int',away_score:'int',home_penalties:'int',away_penalties:'int'};
@@ -108,7 +109,7 @@ for (const [_, name, body] of tables) {
   assert.equal(e.Checks.length, checks.length+(name==='bookings'?2:name==='challenges'?1:name==='tournaments'?1:name==='tournament_matches'?5:0));
   for (const [__, checkName, expression] of checks) {
     totals.checks++;
-    const expected=checkName==='CK_bookings_rule_4'?'DATEPART(TZOFFSET,[starts_at]) = 180 AND DATEPART(HOUR,[starts_at]) BETWEEN 13 AND 22':expression;
+    const expected=checkName==='CK_tournament_registrations_status_enum'?"[status] IN (N'Registered', N'Withdrawn', N'Pending')":checkName==='CK_bookings_rule_4'?'DATEPART(TZOFFSET,[starts_at]) = 180 AND DATEPART(HOUR,[starts_at]) BETWEEN 13 AND 22':expression;
     assert.ok(e.Checks.some(c => c.Name === checkName && c.Sql === expected), `${checkName}: weakened/missing check`);
   }
   const foreignKeys = [...body.matchAll(/CONSTRAINT \[([^\]]+)\] FOREIGN KEY \(([^\n]+?)\) REFERENCES \[dbo\]\.\[(\w+)\] \(([^\n]+?)\) ON DELETE NO ACTION/g)];
@@ -160,7 +161,13 @@ assert.deepEqual(alternateKeys, [
   'UQ_tournament_matches_tournament_id_id',
   'UQ_tournament_registrations_tournament_id_id'
 ]);
-assert.deepEqual(totals, {columns:241,primaryKeys:27,foreignKeys:68,checks:84,uniqueGuarantees:15,indexesCovered:60,computed:4,literalDefaults:38,generatedDefaults:16});
+assert.deepEqual(totals, {columns:242,primaryKeys:27,foreignKeys:68,checks:84,uniqueGuarantees:15,indexesCovered:60,computed:4,literalDefaults:38,generatedDefaults:16});
+for(const [table,count,fks] of [['gateway_payments',13,3],['stripe_checkout_attempts',6,1],['stripe_webhook_events',4,0]]){const e=entities.get(table);assert(e&&e.Properties.length===count&&e.ForeignKeys.length===fks);assert(e.ForeignKeys.every(f=>f.DeleteBehavior==='NoAction'));}
+const gateway=entities.get('gateway_payments');
+for(const [name,type]of [['AmountJod','decimal(12,2)'],['UsdPerJod','decimal(12,6)'],['AmountUsdCents','bigint']])assert(gateway.Properties.some(p=>p.Name===name&&p.Type===type&&!p.IsNullable));
+assert(gateway.Indexes.some(i=>i.IsUnique&&same(i.Columns,['BookingId'])&&i.Filter==='[BookingId] IS NOT NULL'));
+assert(gateway.Indexes.some(i=>i.IsUnique&&same(i.Columns,['RegistrationId'])&&i.Filter==="[RegistrationId] IS NOT NULL AND [Status] = 'Pending'"));
+assert(gateway.Checks.some(c=>c.Name==='CK_gateway_amount'&&c.Sql.includes("[Currency]='usd'")));
 const user = entities.get('users');
 for (const retired of ['password_salt','password_algorithm','password_iterations','role'])
   assert.ok(!user.Properties.some(p => p.Column === retired));
@@ -182,7 +189,7 @@ const summary = {
   shadowProperties: 0, coveredInsteadOfSeparate,
   limitation: 'No SQL connection, SQL execution, migration generation/application, or SaveChanges. SQL Server runtime behavior remains untested.'
 };
-const outputDir = path.join(root, '.local/ef-preparation');
+const outputDir = process.env.KICKS_TEST_EVIDENCE || path.join(root, '.local/ef-preparation');
 fs.mkdirSync(outputDir,{recursive:true});
 fs.writeFileSync(path.join(outputDir,'model-after.json'), JSON.stringify(model,null,2));
 fs.writeFileSync(path.join(outputDir,'validation.json'), JSON.stringify(summary,null,2));

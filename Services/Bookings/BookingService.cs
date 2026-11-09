@@ -1,6 +1,7 @@
 using KicksMvc.Data;
 using KicksMvc.Models.Entities;
 using KicksMvc.Services.Fields;
+using KicksMvc.Services.Payments;
 using KicksMvc.ViewModels;
 using Microsoft.AspNetCore.DataProtection;
 using Microsoft.EntityFrameworkCore;
@@ -15,7 +16,7 @@ public sealed class BookingRuleException(string message, bool conflict = false) 
     public bool Conflict { get; } = conflict;
 }
 
-public sealed class BookingService(KicksDbContext db, FieldService fields, IDataProtectionProvider protection, TimeProvider clock)
+public sealed class BookingService(KicksDbContext db, FieldService fields, IDataProtectionProvider protection, TimeProvider clock, PaymentReservations payments)
 {
     private readonly IDataProtector quotes = protection.CreateProtector("Kicks.BookingQuote.v2");
     private readonly IDataProtector versions = protection.CreateProtector("Kicks.BookingVersion.v1");
@@ -51,7 +52,7 @@ public sealed class BookingService(KicksDbContext db, FieldService fields, IData
         if (date < DateOnly.FromDateTime(Now.ToOffset(TimeSpan.FromHours(3)).DateTime)) throw new BookingRuleException("Choose today or a future date.");
         var start = Start(date, 13); var end = Start(date, 23);
         var blocks = await FieldOccupancy.Blocks(db,fieldId,start,end);
-        return new(fieldId, date, durationMinutes, "Amman (UTC+03:00)", Enumerable.Range(13, 11 - durationMinutes / 60).Select(hour => { var s = Start(date, hour); return new BookingSlot(hour, $"{hour:00}:00", s > Now && !blocks.Any(b => b.StartsAt < s.AddMinutes(durationMinutes) && b.EndsAt > s)); }).ToArray(), TotalPrice(field.HourlyPrice, durationMinutes), "JOD");
+        return new(fieldId, date, durationMinutes, "Amman (UTC+03:00)", Enumerable.Range(13, 11 - durationMinutes / 60).Select(hour => { var s = Start(date, hour); return new BookingSlot(hour, $"{hour:00}:00", s > Now && (field.HourlyPrice==0||s>=Now.AddMinutes(30)) && !blocks.Any(b => b.StartsAt < s.AddMinutes(durationMinutes) && b.EndsAt > s)); }).ToArray(), TotalPrice(field.HourlyPrice, durationMinutes), "JOD");
     }
     public async Task<BookingQuote> QuoteAsync(int playerId, BookingSlotInput input)
     {
@@ -92,23 +93,27 @@ public sealed class BookingService(KicksDbContext db, FieldService fields, IData
             CommissionRate = 0,
             Commission = 0,
             OwnerNet = payload.Price,
-            Status = "Confirmed",
+            Status = payload.Price > 0 ? "Pending" : "Confirmed",
+            PaymentDeadline = payload.Price > 0 ? payments.Deadline(payload.Start, payload.Price) : null,
             IsSplit = false
         };
-        db.Bookings.Add(booking); await db.SaveChangesAsync(); await transaction.CommitAsync();
+        db.Bookings.Add(booking); await db.SaveChangesAsync(); await payments.Add(booking); await transaction.CommitAsync();
         return ((await GetAsync(booking.Id, playerId, false))!, false);
     }
     private IQueryable<Booking> Scoped(int userId, bool owner) => owner ? db.Bookings.Where(b => b.OwnerId == userId && b.Field.OwnerId == userId) : db.Bookings.Where(b => b.UserId == userId);
     private string Stamp(Booking b) => Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(JsonSerializer.Serialize(new { b.Id, b.FieldId, b.OwnerId, b.UserId, b.StartsAt, b.EndsAt, b.DurationMinutes, b.Price, b.Status, b.CancelledBy, b.CancelledAt, b.CancellationReason }))));
     private string Version(Booking b) => versions.Protect(Stamp(b));
-    private static bool Simple(Booking b) => !b.IsSplit && b.ChallengeId is null && b.Teams.Count == 0 && b.Shares.Count == 0;
+    private static bool Simple(Booking b) => !b.IsSplit && b.Shares.Count==0 &&
+        (b.ChallengeId is null && b.Teams.Count==0 || b.ChallengeId is not null && b.Teams.Count==2 && b.PaymentDeadline is not null);
     private BookingDisplay Display(Booking b, bool owner) => new(b.Id, b.FieldId, b.Field.Name, b.Field.City, b.Field.Area, b.Player.FullName, b.StartsAt, b.EndsAt, b.DurationMinutes, b.Price, b.Status, b.EndsAt <= Now,
         Simple(b) && (owner ? (b.Status is "Pending" or "Confirmed") && b.StartsAt > Now : b.Status == "Confirmed" && b.StartsAt - Now >= TimeSpan.FromHours(3)),
         Simple(b) && owner && b.Status == "Confirmed" && b.EndsAt <= Now, Version(b), b.CancellationReason, b.CancelledAt);
     public async Task<BookingDisplay?> GetAsync(int id, int userId, bool owner)
     {
         var booking = await Scoped(userId, owner).AsNoTracking().Include(b => b.Field).Include(b => b.Player).Include(b => b.Teams).Include(b => b.Shares).AsSplitQuery().SingleOrDefaultAsync(b => b.Id == id);
-        return booking is null ? null : Display(booking, owner);
+        if(booking is null)return null;
+        var payment=await db.GatewayPayments.AsNoTracking().SingleOrDefaultAsync(p=>p.BookingId==id);
+        return WithPayment(Display(booking,owner),payment,owner);
     }
     public async Task<BookingPage> ListAsync(int userId, bool owner, BookingListInput input)
     {
@@ -118,8 +123,15 @@ public sealed class BookingService(KicksDbContext db, FieldService fields, IData
         if (!string.IsNullOrWhiteSpace(input.Search)) { var term = input.Search.Trim(); query = query.Where(b => b.Field.Name.Contains(term) || b.Field.City.Contains(term) || b.Status.Contains(term)); }
         var total = await query.CountAsync(); const int size = 12; var page = Math.Min(input.Page, Math.Max(1, (int)Math.Ceiling(total / (double)size)));
         var bookings = await query.AsNoTracking().Include(b => b.Field).Include(b => b.Player).Include(b => b.Teams).Include(b => b.Shares).AsSplitQuery().OrderByDescending(b => b.StartsAt).ThenByDescending(b => b.Id).Skip((page - 1) * size).Take(size).ToListAsync();
-        return new(bookings.Select(b => Display(b, owner)).ToArray(), total, page, size, input.Period);
+        var ids=bookings.Select(b=>b.Id).ToArray();var ledger=await db.GatewayPayments.AsNoTracking().Where(p=>p.BookingId!=null&&ids.Contains(p.BookingId.Value)).ToDictionaryAsync(p=>p.BookingId!.Value);
+        return new(bookings.Select(b => WithPayment(Display(b,owner),ledger.GetValueOrDefault(b.Id),owner)).ToArray(), total, page, size, input.Period);
     }
+    private BookingDisplay WithPayment(BookingDisplay b,GatewayPayment? p,bool owner)=>b with
+    {
+        PaymentStatus=p is null?(b.Price==0?"Free":"Legacy / deferred"):p.Status=="Pending"&&p.HoldExpiresAt<=Now?"Expired":p.Status,
+        FinancialReview=p?.FinancialReview==true,
+        PaymentUrl=!owner&&p?.Status=="Pending"&&p.HoldExpiresAt>Now?"/payments/"+p.Id:null
+    };
     public async Task<bool> ChangeStatusAsync(int id, int actorId, bool owner, string version, bool complete)
     {
         var fieldId = await Scoped(actorId, owner).Where(b => b.Id == id).Select(b => (int?)b.FieldId).SingleOrDefaultAsync();
@@ -140,6 +152,8 @@ public sealed class BookingService(KicksDbContext db, FieldService fields, IData
             if (booking.Status is not ("Pending" or "Confirmed") || booking.StartsAt <= Now) throw new BookingRuleException("Only future active reservations can be cancelled.", true);
             if (!owner && (booking.Status != "Confirmed" || booking.StartsAt - Now < TimeSpan.FromHours(3))) throw new BookingRuleException("Players can cancel their own confirmed reservation only when at least 3 hours remain before its Amman start time. Please contact the field owner.", true);
             booking.Status = "Cancelled"; booking.CancellationReason = "Cancelled"; booking.CancelledBy = actorId; booking.CancelledAt = Now;
+            if(booking.ChallengeId is int cid){var challenge=await db.Challenges.SingleAsync(c=>c.Id==cid);if(challenge.Status is "Booked" or "Awaiting payment")challenge.Status="Cancelled";}
+            await payments.Cancel(bookingId:id);
         }
         await db.SaveChangesAsync(); await transaction.CommitAsync(); return true;
     }

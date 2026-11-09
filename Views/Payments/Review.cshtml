@@ -1,0 +1,20 @@
+@model KicksMvc.Models.Entities.GatewayPayment
+@{var active=ViewData["HoldActive"] is true;}
+<!doctype html><html lang="en"><head><meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Sandbox payment | KICKS</title><link rel="stylesheet" href="/css/style.css" /><link rel="stylesheet" href="/css/auth.css" />
+<link rel="stylesheet" href="/css/server-payments.css" /></head><body class="auth-page">
+<main class="auth-shell"><section class="auth-panel payment-review" data-payment-id="@Model.Id">
+<a class="auth-brand" href="/index.html">KICKS</a><p class="eyebrow">STRIPE SANDBOX · NO REAL MONEY</p><h1>Review your payment</h1>
+<p>@(Model.BookingId is int bid?"Field reservation #"+bid:"Tournament team entry #"+Model.RegistrationId)</p>
+<dl><dt>Original price</dt><dd id="paymentJod">@Model.AmountJod.ToString("0.00") JOD</dd>
+<dt>Fixed sandbox conversion</dt><dd>1 JOD = @Model.UsdPerJod.ToString("0.00####") USD</dd>
+<dt>Stripe test charge</dt><dd id="paymentUsd">@((Model.AmountUsdCents/100m).ToString("0.00")) USD</dd>
+<dt>Payment status</dt><dd id="paymentStatus">@Model.Status</dd>
+<dt>Place held until (Amman)</dt><dd>@Model.HoldExpiresAt.ToOffset(TimeSpan.FromHours(3)).ToString("dd MMM yyyy HH:mm:ss")</dd></dl>
+<p id="paymentNotice" role="status">@(Model.FinancialReview?"Payment received; manual financial review is required. No automatic refund.":Model.Status=="Paid"?"Payment verified by Stripe webhook.":active?"Complete payment within this hold to confirm your place. Returning here does not prove payment.":"This hold is closed. No new charge can be started here.")</p>
+@if(active){<div id="paymentActions"><form method="post" action="/payments/@Model.Id/checkout">@Html.AntiForgeryToken()<button class="submit-auth" id="startStripeCheckout">Continue to Stripe TEST</button></form>
+<form method="post" action="/payments/@Model.Id/cancel">@Html.AntiForgeryToken()<button class="submit-auth secondary" id="cancelStripeHold">Cancel unpaid hold</button></form></div>}
+<p>Prices in KICKS remain in JOD. USD conversion applies only to this test payment. Card details are entered on Stripe.</p>
+<p>Paid cancellations follow the existing booking/tournament rules and require manual financial review.</p>
+<a href="/Pages/Dashboard/player.html#bookings">My bookings</a> · <a href="/Pages/Tournaments/tournaments.html?mode=registered">My team tournaments</a>
+</section></main><script src="/js/server-payments.js" defer></script></body></html>

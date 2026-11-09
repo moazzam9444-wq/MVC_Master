@@ -11,6 +11,7 @@ public class TournamentRegistration
     public string EmailSnapshot { get; set; } = string.Empty;
     public string Status { get; set; } = "Registered";
     public DateTimeOffset? WithdrawnAt { get; set; }
+    public DateTimeOffset? PaymentDeadline { get; set; }
     public int? WithdrawnBy { get; set; }
     public DateTimeOffset CreatedAt { get; set; }
 

@@ -11,7 +11,7 @@ using Microsoft.AspNetCore.DataProtection;
 using Microsoft.EntityFrameworkCore;
 namespace KicksMvc.Services.Tournaments;
 
-public sealed partial class TournamentService(KicksDbContext db,FieldService fields,ActivityRules rules,IDataProtectionProvider protection)
+public sealed partial class TournamentService(KicksDbContext db,FieldService fields,ActivityRules rules,IDataProtectionProvider protection,KicksMvc.Services.Payments.PaymentReservations payments)
 {
     readonly IDataProtector quotes=protection.CreateProtector("Kicks.Tournaments.Creation.v1");
     sealed record Quote(int Actor,Guid Key,TournamentInput Input,DateTimeOffset Expiry);
@@ -75,6 +75,6 @@ public sealed partial class TournamentService(KicksDbContext db,FieldService fie
         await using var tx=await db.Database.BeginTransactionAsync();var(t,field)=await Gate(id);Owner(t,field,actor);await Editable(t);rules.Check(version,await Version(t));
         if(await db.TournamentMatches.AnyAsync(m=>m.TournamentId==id&&m.Status=="Scheduled"&&m.StartsAt<=rules.Now&&m.EndsAt>rules.Now))throw new ActivityException("An ongoing match must finish before cancelling the remaining tournament.");
         var future=await db.TournamentMatches.Where(m=>m.TournamentId==id&&(m.Status=="Draft"||m.Status=="Scheduled"&&m.StartsAt>rules.Now)).ToListAsync();foreach(var m in future){m.Status="Cancelled";m.UpdatedBy=actor;m.UpdatedAt=rules.Now;}
-        t.Status="Cancelled";t.CancelledBy=actor;t.CancelledAt=rules.Now;await db.SaveChangesAsync();await tx.CommitAsync();
+        t.Status="Cancelled";t.CancelledBy=actor;t.CancelledAt=rules.Now;await payments.Cancel(tournamentId:id);await db.SaveChangesAsync();await tx.CommitAsync();
     }
 }

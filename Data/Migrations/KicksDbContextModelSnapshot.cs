@@ -711,6 +711,80 @@ namespace KicksMvc.Data.Migrations
                         });
                 });
 
+            modelBuilder.Entity("KicksMvc.Models.Entities.GatewayPayment", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<decimal>("AmountJod")
+                        .HasPrecision(12, 2)
+                        .HasColumnType("decimal(12,2)");
+
+                    b.Property<long>("AmountUsdCents")
+                        .HasColumnType("bigint");
+
+                    b.Property<int?>("BookingId")
+                        .HasColumnType("int");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<string>("Currency")
+                        .IsRequired()
+                        .HasMaxLength(3)
+                        .IsUnicode(false)
+                        .HasColumnType("varchar(3)");
+
+                    b.Property<bool>("FinancialReview")
+                        .HasColumnType("bit");
+
+                    b.Property<DateTimeOffset>("HoldExpiresAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<DateTimeOffset?>("PaidAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<int>("PayerId")
+                        .HasColumnType("int");
+
+                    b.Property<int?>("RegistrationId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(16)
+                        .IsUnicode(false)
+                        .HasColumnType("varchar(16)");
+
+                    b.Property<decimal>("UsdPerJod")
+                        .HasPrecision(12, 6)
+                        .HasColumnType("decimal(12,6)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("BookingId")
+                        .IsUnique()
+                        .HasFilter("[BookingId] IS NOT NULL");
+
+                    b.HasIndex("PayerId");
+
+                    b.HasIndex("RegistrationId")
+                        .IsUnique()
+                        .HasFilter("[RegistrationId] IS NOT NULL AND [Status] = 'Pending'");
+
+                    b.HasIndex("Status", "HoldExpiresAt");
+
+                    b.ToTable("gateway_payments", "dbo", t =>
+                        {
+                            t.HasCheckConstraint("CK_gateway_amount", "[AmountJod]>0 AND [UsdPerJod]>0 AND [AmountUsdCents] BETWEEN 50 AND 99999999 AND [Currency]='usd'");
+
+                            t.HasCheckConstraint("CK_gateway_status", "[Status] IN ('Pending','Paid','Expired','Cancelled')");
+
+                            t.HasCheckConstraint("CK_gateway_target", "CASE WHEN [BookingId] IS NULL THEN 0 ELSE 1 END + CASE WHEN [RegistrationId] IS NULL THEN 0 ELSE 1 END = 1");
+                        });
+                });
+
             modelBuilder.Entity("KicksMvc.Models.Entities.Message", b =>
                 {
                     b.Property<int>("Id")
@@ -1101,6 +1175,79 @@ namespace KicksMvc.Data.Migrations
 
                             t.HasCheckConstraint("CK_settings_listing_fee", "[listing_fee] >= 0");
                         });
+                });
+
+            modelBuilder.Entity("KicksMvc.Models.Entities.StripeCheckoutAttempt", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<Guid>("PaymentId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("PaymentIntentId")
+                        .HasMaxLength(255)
+                        .IsUnicode(false)
+                        .HasColumnType("varchar(255)");
+
+                    b.Property<string>("SessionId")
+                        .HasMaxLength(255)
+                        .IsUnicode(false)
+                        .HasColumnType("varchar(255)");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(16)
+                        .IsUnicode(false)
+                        .HasColumnType("varchar(16)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("PaymentId");
+
+                    b.HasIndex("PaymentIntentId")
+                        .IsUnique()
+                        .HasFilter("[PaymentIntentId] IS NOT NULL");
+
+                    b.HasIndex("SessionId")
+                        .IsUnique()
+                        .HasFilter("[SessionId] IS NOT NULL");
+
+                    b.ToTable("stripe_checkout_attempts", "dbo", t =>
+                        {
+                            t.HasCheckConstraint("CK_checkout_status", "[Status] IN ('Creating','Open','Paid','Expired')");
+                        });
+                });
+
+            modelBuilder.Entity("KicksMvc.Models.Entities.StripeWebhookEvent", b =>
+                {
+                    b.Property<string>("EventId")
+                        .HasMaxLength(255)
+                        .IsUnicode(false)
+                        .HasColumnType("varchar(255)");
+
+                    b.Property<string>("EventType")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .IsUnicode(false)
+                        .HasColumnType("varchar(100)");
+
+                    b.Property<string>("Outcome")
+                        .IsRequired()
+                        .HasMaxLength(40)
+                        .IsUnicode(false)
+                        .HasColumnType("varchar(40)");
+
+                    b.Property<DateTimeOffset>("ProcessedAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.HasKey("EventId");
+
+                    b.ToTable("stripe_webhook_events", "dbo");
                 });
 
             modelBuilder.Entity("KicksMvc.Models.Entities.Team", b =>
@@ -1689,6 +1836,10 @@ namespace KicksMvc.Data.Migrations
                         .HasColumnType("nvarchar(254)")
                         .HasColumnName("email_snapshot");
 
+                    b.Property<DateTimeOffset?>("PaymentDeadline")
+                        .HasColumnType("datetimeoffset(0)")
+                        .HasColumnName("payment_deadline");
+
                     b.Property<string>("Status")
                         .IsRequired()
                         .HasColumnType("varchar(24)")
@@ -1741,7 +1892,7 @@ namespace KicksMvc.Data.Migrations
 
                     b.ToTable("tournament_registrations", "dbo", t =>
                         {
-                            t.HasCheckConstraint("CK_tournament_registrations_status_enum", "[status] IN (N'Registered', N'Withdrawn')");
+                            t.HasCheckConstraint("CK_tournament_registrations_status_enum", "[status] IN (N'Registered', N'Withdrawn', N'Pending')");
                         });
                 });
 
@@ -2353,6 +2504,29 @@ namespace KicksMvc.Data.Migrations
                     b.Navigation("User");
                 });
 
+            modelBuilder.Entity("KicksMvc.Models.Entities.GatewayPayment", b =>
+                {
+                    b.HasOne("KicksMvc.Models.Entities.Booking", "Booking")
+                        .WithMany()
+                        .HasForeignKey("BookingId")
+                        .OnDelete(DeleteBehavior.NoAction);
+
+                    b.HasOne("KicksMvc.Models.Entities.User", null)
+                        .WithMany()
+                        .HasForeignKey("PayerId")
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .IsRequired();
+
+                    b.HasOne("KicksMvc.Models.Entities.TournamentRegistration", "Registration")
+                        .WithMany()
+                        .HasForeignKey("RegistrationId")
+                        .OnDelete(DeleteBehavior.NoAction);
+
+                    b.Navigation("Booking");
+
+                    b.Navigation("Registration");
+                });
+
             modelBuilder.Entity("KicksMvc.Models.Entities.Message", b =>
                 {
                     b.HasOne("KicksMvc.Models.Entities.User", "Recipient")
@@ -2483,6 +2657,17 @@ namespace KicksMvc.Data.Migrations
                         .HasConstraintName("FK_registration_players_user_id_1");
 
                     b.Navigation("Registration");
+                });
+
+            modelBuilder.Entity("KicksMvc.Models.Entities.StripeCheckoutAttempt", b =>
+                {
+                    b.HasOne("KicksMvc.Models.Entities.GatewayPayment", "Payment")
+                        .WithMany("Attempts")
+                        .HasForeignKey("PaymentId")
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .IsRequired();
+
+                    b.Navigation("Payment");
                 });
 
             modelBuilder.Entity("KicksMvc.Models.Entities.Team", b =>
@@ -2848,6 +3033,11 @@ namespace KicksMvc.Data.Migrations
                     b.Navigation("OpenGames");
 
                     b.Navigation("Tournaments");
+                });
+
+            modelBuilder.Entity("KicksMvc.Models.Entities.GatewayPayment", b =>
+                {
+                    b.Navigation("Attempts");
                 });
 
             modelBuilder.Entity("KicksMvc.Models.Entities.OpenGame", b =>

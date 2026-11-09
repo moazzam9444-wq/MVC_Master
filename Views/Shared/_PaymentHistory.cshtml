@@ -1,0 +1,11 @@
+@model KicksMvc.ViewModels.PaymentHistoryPage
+<section class="dash-panel" id="sqlPaymentHistory">
+<div class="panel-heading"><h2>Stripe sandbox payments</h2><button class="dash-btn secondary" data-payment-page="1" data-review="@(!Model.ReviewOnly)">@(Model.ReviewOnly?"All payments":"Needs financial review")</button></div>
+<p>Verified test captures: @((Model.PaidUsdCents/100m).ToString("0.00")) USD · @Model.ReviewCount payment(s) need manual financial review.</p>
+<p>Original prices remain in JOD. These are sandbox records, with no real bank balance, commissions, listing fees, payouts or automatic refunds.</p>
+<div class="table-wrap"><table class="records-table dashboard-table" data-no-pagination><thead><tr><th>Operation</th><th>Paid by</th><th>JOD price</th><th>USD test amount</th><th>Status</th><th>Review</th></tr></thead><tbody>
+@foreach(var p in Model.Items){<tr data-payment-history-id="@p.Id"><td data-label="Operation">@(p.BookingId is int bid?"Booking #"+bid:"Team entry #"+p.RegistrationId)<small>@p.Description</small><small>@p.CreatedAt.ToOffset(TimeSpan.FromHours(3)).ToString("dd MMM yyyy HH:mm") · Amman</small></td><td data-label="Paid by">@p.Payer</td><td data-label="JOD price">@p.AmountJod.ToString("0.00") JOD</td><td data-label="USD test amount">@((p.AmountUsdCents/100m).ToString("0.00")) USD<small>1 JOD = @p.UsdPerJod.ToString("0.00####") USD</small></td><td data-label="Status">@p.Status</td><td data-label="Review">@(p.FinancialReview?"Manual financial review required":"—")</td></tr>}
+@if(Model.Total==0){<tr><td colspan="6">No matching sandbox payments.</td></tr>}
+</tbody></table></div><nav class="kicks-table-pagination" aria-label="Payment history pages">
+@if(Model.Page>1){<button data-payment-page="@(Model.Page-1)" data-review="@Model.ReviewOnly">Previous</button>}<span>Page @Model.Page · @Model.Total record(s)</span>@if(Model.Page*Model.PageSize<Model.Total){<button data-payment-page="@(Model.Page+1)" data-review="@Model.ReviewOnly">Next</button>}
+</nav></section>

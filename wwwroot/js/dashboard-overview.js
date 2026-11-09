@@ -6,12 +6,6 @@
   // Count useful records for the signed-in account or admin.
   function getStatistics(role, getRecords) {
     const bookings = getRecords("bookings");
-    let platformCommission = 0;
-
-    for (const paid of KicksStore.list("payments")) {
-      if (paid.status === "Paid (demo)" && paid.adminId === KicksAuth.current()?.id) platformCommission += Number(paid.commission || 0);
-    }
-
     if (role === "player")
       return [
         { title: "Your bookings", value: window.KicksBookings?.summary.total ?? bookings.length, note: "All statuses", link: "bookings", icon: "◷" },
@@ -32,7 +26,7 @@
       { title: "Football fields", value: getRecords("fields").length, note: "Across the platform", link: "fields", icon: "▦" },
       { title: "Bookings", value: bookings.length, note: "All statuses", link: "bookings", icon: "◷" },
       { title: "Competitions", value: (window.KicksActivitySummary?.total ?? 0) + (window.KicksTournamentSummary?.total ?? 0), note: "Games + tournaments", link: "tournaments", icon: "◇" },
-      { title: "Platform revenue", value: platformCommission.toFixed(2) + " JD", note: "Commissions + listing fees (local)", link: "revenue", icon: "↗" },
+      { title: "Payment reviews", value: window.KicksPaymentSummary?.reviewCount ?? "…", note: "Stripe sandbox · Manual review", link: "revenue", icon: "↗" },
     ];
   }
 

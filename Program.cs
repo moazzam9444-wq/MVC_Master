@@ -9,6 +9,18 @@ using System.Threading.RateLimiting;
 using KicksMvc.Services.Fields;
 using KicksMvc.Services.Bookings;
 var builder = WebApplication.CreateBuilder(args);
+if(args.Contains("--stripe-test-listener")||args.Contains("--stripe-local-listener"))
+{
+    Environment.ExitCode=await KicksMvc.Services.Payments.StripeTestListener.RunAsync(builder.Configuration,builder.Environment,args.Contains("--stripe-test-listener"));
+    return;
+}
+// Read-only sandbox preflight. Exits before database registration or web hosting.
+if (args.Contains("--verify-stripe-sandbox"))
+{
+    Environment.ExitCode = await KicksMvc.Services.Payments.StripeSandboxPreflight.RunAsync(
+        builder.Configuration, builder.Environment);
+    return;
+}
 builder.Services.AddControllersWithViews(options =>
 {
     options.Filters.Add(new AutoValidateAntiforgeryTokenAttribute());
@@ -55,6 +67,10 @@ builder.Services.AddScoped<KicksMvc.Services.Tournaments.TournamentService>();
 builder.Services.AddScoped<FieldImageStore>();
 builder.Services.AddSingleton(TimeProvider.System);
 builder.Services.AddScoped<BookingService>();
+builder.Services.AddScoped<KicksMvc.Services.Payments.SandboxSettings>();
+builder.Services.AddScoped<KicksMvc.Services.Payments.PaymentReservations>();
+builder.Services.AddScoped<KicksMvc.Services.Payments.StripePaymentService>();
+builder.Services.AddHostedService<KicksMvc.Services.Payments.PaymentExpiryWorker>();
 // Explicit reference-data initialization only; no account or schema changes.
 if(args.Contains("--initialize-field-amenities"))
 {

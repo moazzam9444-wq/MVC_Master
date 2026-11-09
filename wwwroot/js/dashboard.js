@@ -360,26 +360,12 @@
     }
     getElement("dashboardView").innerHTML = `<div class="view-heading"><div><h2>Community feedback</h2><p>${feedback.length} responses saved on this browser. Email delivery is separate.</p></div></div><section class="dash-panel"><div class="table-wrap"><table class="records-table"><thead><tr><th>Name</th><th>Email</th><th>Rating</th><th>Message</th><th>Date</th></tr></thead><tbody>${rows || '<tr><td colspan="5">No feedback yet.</td></tr>'}</tbody></table></div></section>`;
   }
-  function renderRevenue() {
-    if (role !== "admin") return;
-    const payments = store.list("payments").filter(row => row.adminId === currentUserId);
-    let balance = 0;
-    let listingRevenue = 0;
-    let commissions = 0;
-    let rows = "";
-    for (const paid of [...payments].reverse()) {
-      if (paid.status === "Paid (demo)") {
-        balance += paid.commission;
-        if (paid.kind === "Field listing") listingRevenue += paid.commission;
-        else commissions += paid.commission;
-      }
-      const payer = getRecord("users", paid.userId);
-      rows += `<tr><td>${escapeHtml(paid.kind)} #${paid.recordId}</td><td>${escapeHtml(payer?.name || "Removed account")}</td><td>${escapeHtml(paid.createdAt.slice(0,10))}</td><td>${paid.amount.toFixed(2)} JD</td><td>${paid.commission.toFixed(2)} JD</td><td>${paid.ownerNet.toFixed(2)} JD</td><td>${escapeHtml(paid.status)}</td></tr>`;
-    }
-    getElement("dashboardView").innerHTML = `<div class="view-heading"><div><h2>Platform revenue</h2><p>Credited to ${escapeHtml(getCurrentUser().name)} · local simulation, no bank transfers.</p></div></div>
-      <section class="dash-panel"><h2>Account balance: ${balance.toFixed(2)} JD</h2><p>Booking commissions: ${commissions.toFixed(2)} JD · Field listing fees: ${listingRevenue.toFixed(2)} JD</p><p>Current policy: ${Number(store.settings().commissionRate)}% deducted from the organizer, plus ${Number(store.settings().listingFee).toFixed(2)} JD once when an owner publishes a new field. Refunded payments are excluded from this balance.</p></section>
-      <section class="dash-panel"><h2>Payment history</h2><div class="table-wrap"><table class="records-table"><thead><tr><th>Source</th><th>Paid by</th><th>Date</th><th>Total</th><th>KICKS share</th><th>Organizer net</th><th>Status</th></tr></thead><tbody>${rows || '<tr><td colspan="7">No payments yet.</td></tr>'}</tbody></table></div></section>`;
+  async function renderRevenue(page=1,review=false) {
+    if(role!=="admin")return;
+    const target=getElement('dashboardView');target.innerHTML='<section class="dash-panel"><p>Loading sandbox payments…</p></section>';
+    try{const r=await fetch('/payments/history?'+new URLSearchParams({page,review}),{credentials:'same-origin',cache:'no-store'});if(!r.ok||r.redirected)throw Error('Administrator access is required.');const html=await r.text();if(view==='revenue')target.innerHTML=html;}catch(e){if(view==='revenue')target.textContent=e.message;}
   }
+  document.addEventListener('click',e=>{const b=e.target.closest('[data-payment-page]');if(b&&view==='revenue')renderRevenue(Number(b.dataset.paymentPage),b.dataset.review.toLowerCase()==='true');});
   function renderTable(collectionName) {
     const records = getVisibleRecords(collectionName);
     if (["player", "owner"].includes(role) && collectionName === "bookings") {
@@ -1126,6 +1112,7 @@
   store.watchActivityClock(() => {
     if (["overview", "games", "tournaments", "bookings", "memberships", "registrations"].includes(view)) renderDashboard();
   });
+  if(role==='admin')fetch('/api/payments/history',{credentials:'same-origin',cache:'no-store'}).then(async r=>{if(!r.ok||r.redirected)return;window.KicksPaymentSummary=await r.json();if(view==='overview')renderDashboard();}).catch(()=>{});
   fetch('/api/tournaments/summary',{credentials:'same-origin',cache:'no-store'}).then(async r=>{if(!r.ok||r.redirected)throw Error('Unavailable');window.KicksTournamentSummary=await r.json();if(view==='overview')renderDashboard();}).catch(()=>{});
   fetch(role==='admin'?'/api/games':'/api/activities/summary',{credentials:'same-origin',cache:'no-store'}).then(async r=>{if(!r.ok||r.redirected)throw Error('Unavailable');window.KicksActivitySummary=await r.json();if(view==='overview')renderDashboard();}).catch(()=>{});
   renderDashboard();

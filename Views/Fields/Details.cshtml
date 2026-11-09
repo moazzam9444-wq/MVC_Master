@@ -92,7 +92,7 @@
             <fieldset class="kx-slot-field"><legend class="kx-label">02 / PICK YOUR KICKOFF <small>Amman time</small></legend><p class="kx-hint">Open 13:00–23:00. Choose 1 or 2 hours. Shaded times are unavailable.</p><div id="timeSlots" class="kx-time-slots time-slots"></div></fieldset>
             <p id="slotStatus" class="kx-slot-status slot-status" role="status" aria-live="polite"></p>
             <label for="bookingDuration" class="kx-label">SESSION LENGTH</label><select class="kx-control" id="bookingDuration"><option value="60">1 Hour</option><option value="120">2 Hours</option></select><div class="kx-booking-summary booking-summary"><div><span>Session length</span><strong id="selectedDuration">1 hour</strong></div><div><span>Session time</span><strong id="selectedTime">&#8212;</strong></div><div class="kx-booking-total booking-total"><span>Your total</span><strong id="bookingTotal">&#8212;</strong></div></div>
-            <button id="bookButton" class="kx-btn kx-btn--primary kx-btn--wide apply-filters" type="submit" disabled>Reserve this session <svg class="kx-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 19 19 5M5 5h14v14"/></svg></button><p class="kx-payment-caption">No payment is collected; settlement is deferred.</p>
+            <button id="bookButton" class="kx-btn kx-btn--primary kx-btn--wide apply-filters" type="submit" disabled>Reserve this session <svg class="kx-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 19 19 5M5 5h14v14"/></svg></button><p class="kx-payment-caption">Paid sessions: 30-minute hold, then Stripe sandbox payment. Free sessions confirm immediately.</p>
           </form><a class="kx-reservation-help" href="../OpenGames/open-games.html">Need teammates first? <span>Find an open game &#8599;</span></a>
         </aside>
         <div class="kx-venue-story">
@@ -156,7 +156,7 @@
       <div class="payment-breakdown">
         <div><span>Reservation price</span><strong id="paymentAmount"></strong></div>
       </div>
-      <p class="payment-notice">This reserves the field in KICKS. Payment settlement is deferred; no payment is collected.</p>
+      <p class="payment-notice">Paid sessions are held for 30 minutes and confirmed only after verified Stripe test payment. Review JOD and USD totals before checkout. No real money is collected.</p>
       <div class="payment-actions kx-dialog-actions">
         <form method="dialog"><button class="payment-cancel kx-btn kx-btn--secondary">Cancel</button></form>
         <button id="completeDemoPayment" class="apply-filters kx-btn kx-btn--primary kx-btn--wide" type="button">Confirm reservation</button>

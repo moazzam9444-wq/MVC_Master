@@ -21,6 +21,13 @@ using System.Security.Cryptography;
 
 TestDatabase.RequireIsolated();
 if(args.Contains("--verify-test-isolation")){Console.WriteLine("PASS: explicit restored test database identity verified.");return;}
+if(args.Contains("--stripe-fixture")){await StripeTests.Fixture(args[^1],args[^2]);return;}
+if(args.Contains("--stripe"))
+{
+    try{await StripeTests.Run();}
+    catch(Exception error){Console.Error.WriteLine(error is Stripe.StripeException?"FAIL: Official Stripe TEST API check failed; sensitive diagnostics suppressed.":Regex.Replace(error.Message,@"(?:sk|pk)_(?:test|live)_[A-Za-z0-9_]+|whsec_[A-Za-z0-9_]+","[REDACTED]"));Environment.ExitCode=1;}
+    return;
+}
 if(args.Contains("--tournaments"))await TournamentTests.Run();
 else if(args.Contains("--tournament-browser-setup"))await TournamentTests.Fixture(args[^1],"setup");
 else if(args.Contains("--tournament-browser-cleanup"))await TournamentTests.Fixture(args[^1],"cleanup");

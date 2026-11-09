@@ -27,5 +27,10 @@ public sealed record AvailabilityResult(int FieldId, DateOnly Date, int Duration
 public sealed record BookingQuote(int FieldId, string FieldName, DateTimeOffset StartsAt, DateTimeOffset EndsAt, int DurationMinutes, decimal Price, string Currency, string QuoteToken, DateTimeOffset ExpiresAt);
 public sealed record BookingDisplay(int Id, int FieldId, string FieldName, string City, string Area, string PlayerName,
     DateTimeOffset StartsAt, DateTimeOffset EndsAt, int DurationMinutes, decimal Price, string Status, bool Ended,
-    bool CanCancel, bool CanComplete, string Version, string? CancellationReason, DateTimeOffset? CancelledAt);
+    bool CanCancel, bool CanComplete, string Version, string? CancellationReason, DateTimeOffset? CancelledAt)
+{
+    public string PaymentStatus {get;init;} = "Legacy / deferred";
+    public bool FinancialReview {get;init;}
+    public string? PaymentUrl {get;init;}
+}
 public sealed record BookingPage(IReadOnlyList<BookingDisplay> Items, int Total, int Page, int PageSize, string Period);

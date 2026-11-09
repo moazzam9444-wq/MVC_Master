@@ -9,7 +9,7 @@ using Microsoft.EntityFrameworkCore;
 namespace KicksMvc.Controllers;
 
 [ResponseCache(NoStore=true,Location=ResponseCacheLocation.None)]
-public sealed class TournamentApiController(TournamentService tournaments):Controller
+public sealed class TournamentApiController(TournamentService tournaments,KicksMvc.Services.Payments.StripePaymentService payments):Controller
 {
     int Actor=>int.TryParse(User.FindFirstValue(ClaimTypes.NameIdentifier),out var id)?id:0;
     [AllowAnonymous,HttpGet("/api/tournaments")]public Task<IActionResult> List([FromQuery]TournamentListInput input)=>Run(async()=>{if(input.Mode!="browse"&&Actor==0)return Challenge();return Json(await tournaments.List(Actor,User.IsInRole("owner"),input));});
@@ -19,7 +19,7 @@ public sealed class TournamentApiController(TournamentService tournaments):Contr
     [Authorize(Roles="owner"),HttpPost("/tournaments")]public Task<IActionResult> Create(ActivityTokenInput input)=>Run(async()=>{var r=await tournaments.Create(Actor,input.Token);return StatusCode(r.Replay?200:201,new{r.Id,r.Replay});});
     [Authorize(Roles="owner"),HttpPost("/tournaments/{id:int}/edit")]public Task<IActionResult> Edit(int id,TournamentEditInput input)=>Run(async()=>{await tournaments.Edit(Actor,id,input);return Ok(new{message="Tournament updated."});});
     [Authorize(Roles="owner"),HttpPost("/tournaments/{id:int}/cancel")]public Task<IActionResult> Cancel(int id,ActivityVersionInput input)=>Run(async()=>{await tournaments.Cancel(Actor,id,input.Version);return Ok(new{message="Tournament cancelled. Future match time released; history retained. No refunds processed."});});
-    [Authorize(Roles="player"),HttpPost("/tournaments/{id:int}/register")]public Task<IActionResult> Register(int id)=>Run(async()=>StatusCode(await tournaments.Register(Actor,id)?200:201,new{message="Registered immediately. No approval or payment processed."}));
+    [Authorize(Roles="player"),HttpPost("/tournaments/{id:int}/register")]public Task<IActionResult> Register(int id)=>Run(async()=>{var replay=await tournaments.Register(Actor,id);var key=await payments.ForTournament(Actor,id);var p=key is Guid pid?await payments.Find(Actor,pid):null;return StatusCode(replay?200:201,new{message=p?.Status=="Pending"?"Place held for 30 minutes; complete sandbox payment.":"Registration confirmed.",paymentUrl=p?.Status=="Pending"?"/payments/"+p.Id:null});});
     [Authorize(Roles="player"),HttpPost("/tournaments/{id:int}/withdraw")]public Task<IActionResult> Withdraw(int id)=>Run(async()=>{await tournaments.Withdraw(Actor,id);return Ok(new{message="Team withdrawn. Slot released; history retained."});});
     [Authorize(Roles="owner"),HttpPost("/tournaments/{id:int}/draw")]public Task<IActionResult> Draw(int id,ActivityVersionInput input)=>Run(async()=>{await tournaments.Generate(Actor,id,input.Version);return Ok(new{message="Draw locked. Draft fixtures do not reserve field time."});});
     [Authorize(Roles="owner"),HttpPost("/tournaments/{id:int}/matches/{match:int}/schedule")]public Task<IActionResult> Schedule(int id,int match,TournamentScheduleInput input)=>Run(async()=>{await tournaments.Schedule(Actor,id,match,input);return Ok(new{message="Match scheduled and field time reserved."});});

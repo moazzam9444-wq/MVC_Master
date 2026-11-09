@@ -35,8 +35,10 @@ public sealed class BookingsController(BookingService bookings) : Controller
             var result = await bookings.CreateAsync(UserId, input.QuoteToken);
             var message = result.Booking.Status == "Cancelled" ? "This reservation was cancelled. No new reservation was created."
                 : result.Replay ? "Existing reservation returned; no duplicate was created."
-                : "Reservation confirmed. No payment has been collected.";
-            return StatusCode(result.Replay ? 200 : 201, new { booking = result.Booking, replay = result.Replay, message });
+                : result.Booking.Status == "Pending" ? "Time held for 30 minutes. Review and complete sandbox payment to confirm."
+                : "Free reservation confirmed.";
+            return StatusCode(result.Replay ? 200 : 201, new { booking = result.Booking, replay = result.Replay, message,
+                paymentUrl = result.Booking.Status == "Pending" && result.Booking.Price > 0 ? $"/payments/booking/{result.Booking.Id}" : null });
         });
     }
     [Authorize(Roles = "player,owner"), HttpGet("/bookings")]
@@ -63,13 +65,14 @@ public sealed class BookingsController(BookingService bookings) : Controller
     private async Task<IActionResult> ChangeStatus(int id, BookingStatusInput input, bool complete)
     {
         if (!ModelState.IsValid) return InvalidInput();
-        return await Execute(async () => await bookings.ChangeStatusAsync(id, UserId, Owner, input.Version, complete) ? Json(new { message = complete ? "Reservation completed." : "Reservation cancelled. History retained; no payment records changed." }) : NotFound());
+        return await Execute(async () => await bookings.ChangeStatusAsync(id, UserId, Owner, input.Version, complete) ? Json(new { message = complete ? "Reservation completed." : "Reservation cancelled. History retained; any paid amount requires manual financial review. No automatic refund." }) : NotFound());
     }
     private IActionResult InvalidInput() => BadRequest(new { message = "Check the date, 1- or 2-hour duration, page and submitted fields.", errors = ModelState.Values.SelectMany(v => v.Errors).Select(e => e.ErrorMessage) });
     private async Task<IActionResult> Execute(Func<Task<IActionResult>> action)
     {
         try { return await action(); }
         catch (BookingRuleException error) { return StatusCode(error.Conflict ? 409 : 400, new { message = error.Message }); }
+        catch (KicksMvc.Services.Activities.ActivityException error) { return StatusCode(error.Status, new { message=error.Message }); }
         catch (DbUpdateException error) when (error.InnerException is SqlException { Number: 2601 or 2627 }) { return Conflict(new { message = "This slot was reserved by another request. Refresh availability." }); }
         catch (SqlException error) when (error.Number is 1205 or 1222) { return Conflict(new { message = "Another booking update is in progress. Refresh and retry." }); }
         catch (DbUpdateException) { return Conflict(new { message = "The reservation could not be saved. Refresh and retry." }); }

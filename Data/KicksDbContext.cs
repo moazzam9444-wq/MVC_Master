@@ -40,6 +40,9 @@ public class KicksDbContext(DbContextOptions<KicksDbContext> options) : Identity
     public DbSet<BookingTeam> BookingTeams => Set<BookingTeam>();
     public DbSet<BookingShare> BookingShares => Set<BookingShare>();
     public DbSet<Payment> Payments => Set<Payment>();
+    public DbSet<GatewayPayment> GatewayPayments => Set<GatewayPayment>();
+    public DbSet<StripeCheckoutAttempt> StripeCheckoutAttempts => Set<StripeCheckoutAttempt>();
+    public DbSet<StripeWebhookEvent> StripeWebhookEvents => Set<StripeWebhookEvent>();
     public DbSet<Message> Messages => Set<Message>();
     public DbSet<Feedback> Feedback => Set<Feedback>();
     public DbSet<Setting> Settings => Set<Setting>();
@@ -47,6 +50,7 @@ public class KicksDbContext(DbContextOptions<KicksDbContext> options) : Identity
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);
+        GatewayPaymentMapping.Configure(modelBuilder);
         modelBuilder.UseCollation("Latin1_General_100_CI_AS_SC");
         modelBuilder.Entity<User>(e =>
         {
@@ -298,7 +302,7 @@ public class KicksDbContext(DbContextOptions<KicksDbContext> options) : Identity
         {
             e.ToTable("tournament_registrations", "dbo", table =>
             {
-                table.HasCheckConstraint("CK_tournament_registrations_status_enum", "[status] IN (N'Registered', N'Withdrawn')");
+                table.HasCheckConstraint("CK_tournament_registrations_status_enum", "[status] IN (N'Registered', N'Withdrawn', N'Pending')");
             });
             e.HasKey("Id").HasName("PK_tournament_registrations");
             e.Property(x => x.Id).HasColumnName("id").HasColumnType("int").IsRequired().UseIdentityColumn();
@@ -310,6 +314,7 @@ public class KicksDbContext(DbContextOptions<KicksDbContext> options) : Identity
             e.Property(x => x.EmailSnapshot).HasColumnName("email_snapshot").HasColumnType("nvarchar(254)").IsRequired();
             e.Property(x => x.Status).HasColumnName("status").HasColumnType("varchar(24)").IsRequired().HasDefaultValue("Registered").ValueGeneratedNever();
             e.Property(x => x.WithdrawnAt).HasColumnName("withdrawn_at").HasColumnType("datetimeoffset(0)");
+            e.Property(x => x.PaymentDeadline).HasColumnName("payment_deadline").HasColumnType("datetimeoffset(0)");
             e.Property(x => x.WithdrawnBy).HasColumnName("withdrawn_by").HasColumnType("int");
             e.Property(x => x.CreatedAt).HasColumnName("created_at").HasColumnType("datetimeoffset(0)").IsRequired().HasDefaultValueSql("SYSUTCDATETIME()");
             e.HasAlternateKey("TournamentId", "Id").HasName("UQ_tournament_registrations_tournament_id_id");
