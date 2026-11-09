@@ -1,0 +1,10 @@
+@model string
+<section id="sqlTournaments" class="sql-tournaments container" data-detail="@(Model=="details"?"true":"false")" data-role="@(User.IsInRole("owner")?"owner":User.IsInRole("player")?"player":User.IsInRole("admin")?"admin":"anonymous")">
+ <div class="tu-heading"><div><p class="eyebrow">THE COMPETITION STARTS HERE</p><h2>@(Model=="details"?"Tournament matchday":"Find your next tournament.")</h2><p>Single elimination · 2–64 teams · Amman time</p></div><button class="tu-btn" id="tuCreate" hidden>Create Tournament</button></div>
+ <p id="tuNotice" role="status" aria-live="polite"></p>
+ <div id="tuListing"><form class="tu-tools" id="tuFilters"><label>Show<select id="tuMode"></select></label><label>Search<input id="tuSearch" maxlength="120" placeholder="Tournament, field or city" /></label><button class="tu-btn secondary">Search</button></form><div id="tuCards" class="cups-grid"></div><nav id="tuPages" class="tu-tools" aria-label="Tournament pages"></nav></div>
+ <div id="tuDetail" hidden></div>
+ <dialog id="tuEditor" aria-labelledby="tuEditorTitle"><button class="tu-close" data-tu-close="tuEditor" aria-label="Close">×</button><h2 id="tuEditorTitle"></h2><form id="tuForm"></form><p id="tuFormError" role="alert"></p></dialog>
+ <dialog id="tuMatchEditor" aria-labelledby="tuMatchTitle"><button class="tu-close" data-tu-close="tuMatchEditor" aria-label="Close">×</button><h2 id="tuMatchTitle"></h2><form id="tuMatchForm"></form><p id="tuMatchError" role="alert"></p></dialog>
+ <dialog id="tuConfirm" aria-labelledby="tuConfirmTitle"><h2 id="tuConfirmTitle">Confirm action</h2><p id="tuConfirmText"></p><p id="tuConfirmError" role="alert"></p><div class="tu-actions"><button class="tu-btn secondary" data-tu-close="tuConfirm">Go back</button><button class="tu-btn" id="tuConfirmButton">Confirm</button></div></dialog>
+</section>

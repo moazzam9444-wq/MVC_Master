@@ -1,9 +1,9 @@
-/* SQL field and Open Game highlights; tournaments retain their separate prototype store. */
+/* SQL field, Open Game and tournament highlights. */
 (() => {
   'use strict';
   const store=window.KicksStore;
   const esc=value=>store.escape(String(value??''));
-  let sqlFields=[],sqlTotal=0,sqlGames=[],gamesError=false;
+  let sqlFields=[],sqlTotal=0,sqlGames=[],gamesError=false,sqlTournaments=[],tournamentsError=false;
   const fieldsGrid=document.getElementById('home-fields-grid');
   const gamesGrid=document.getElementById('home-open-games-grid');
   const cupsGrid=document.getElementById('home-tournaments-grid');
@@ -28,10 +28,7 @@
     const start=new Date(game.startsAt),day=start.toLocaleDateString('en-GB',{weekday:'short',day:'numeric',month:'short',timeZone:'Asia/Amman'}),hour=start.toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit',timeZone:'Asia/Amman'}),spots=Math.max(0,game.capacity-game.count);
     return `<a class="game-row fl-game-row" href="Pages/OpenGames/game-details.html?id=${encodeURIComponent(game.id)}"><div class="game-date"><span>${esc(day)}</span><strong>${esc(hour)}</strong></div><div class="game-info"><h3>${esc(game.title)}</h3><p>${esc(game.field)} · ${esc(game.city)}</p><p>${esc(game.format)} · ${game.durationMinutes} min · No payment collected</p></div><span class="game-spots">${spots?spots+' spots left':'Full'}</span><span class="game-arrow">${arrow}</span></a>`;
   }
-  function cupCard(cup,fields){
-    const field=fields.find(f=>f.id===cup.fieldId);if(!field)return '';
-    return `<a class="fl-cup-row" href="Pages/Tournaments/tournament-details.html?id=${encodeURIComponent(cup.id)}"><div><p>${esc(cup.date)} / ${esc(field.city)}</p><strong>${esc(cup.name)}</strong><p>${esc(cup.teams)} / ${esc(cup.capacity)} teams · ${esc(cup.fee)} JD / team</p></div>${arrow}</a>`;
-  }
+  function cupCard(cup){return `<a class="fl-cup-row" href="Pages/Tournaments/tournament-details.html?id=${encodeURIComponent(cup.id)}"><div><p>${esc(new Date(cup.startsAt).toLocaleDateString('en-GB',{timeZone:'Asia/Amman'}))} / ${esc(cup.city)}</p><strong>${esc(cup.name)}</strong><p>${cup.count} / ${cup.capacity} teams · ${Number(cup.entryFee).toFixed(2)} JD / team · Payment Not Processed</p></div>${arrow}</a>`;}
   function renderHighlights(){
     const fields=sqlFields,selected=city.value;
     const cities=[...new Set([...city.options].map(o=>o.value).filter(Boolean).concat(fields.map(f=>f.city)))].sort();
@@ -43,7 +40,7 @@
     if(filters){resultBar.hidden=false;const description=[filters.city,filters.date,filters.time].filter(Boolean).join(' · ');status.textContent=`${sqlTotal} ${sqlTotal===1?'field matches':'fields match'}${description?' · '+description:''}.${sqlTotal>12?' Showing the first 12.':''} Explore the field details.`;}
     const byStart=(a,b)=>(a.date+a.time).localeCompare(b.date+b.time);
     gamesGrid.innerHTML=gamesError?'<p class="home-empty">Game information is temporarily unavailable.</p>':sqlGames.filter(g=>Date.parse(g.startsAt)>Date.now()).slice(0,3).map(gameCard).join('')||'<p class="home-empty">No upcoming games yet. Check back for your next kick-off.</p>';
-    cupsGrid.innerHTML=store.publicActivities('tournaments').sort(byStart).slice(0,1).map(c=>cupCard(c,store.list('fields'))).join('')||'<p class="home-empty">No active or upcoming tournaments yet. Get your team ready for the next one.</p>';
+    cupsGrid.innerHTML=tournamentsError?'<p class="home-empty">Tournament information is temporarily unavailable.</p>':sqlTournaments.filter(t=>t.status!=='Completed').slice(0,1).map(cupCard).join('')||'<p class="home-empty">No active or upcoming tournaments yet. Get your team ready for the next one.</p>';
     document.getElementById('homeCities').textContent=cities.length?cities.join(' · '):'Jordan / Everyone’s game';
     window.ScrollTrigger?.refresh();
     const settings=store.settings(),aboutTitle=document.getElementById('homeAboutTitle'),aboutDescription=document.getElementById('homeAboutDescription'),contact=document.getElementById('homeContact');
@@ -71,6 +68,7 @@
   }
 
 
+fetch('/api/tournaments',{cache:'no-store'}).then(r=>{if(!r.ok)throw Error();return r.json();}).then(data=>{sqlTournaments=data.items;renderHighlights();}).catch(()=>{tournamentsError=true;renderHighlights();});
 fetch('/api/games',{cache:'no-store'}).then(r=>{if(!r.ok)throw Error();return r.json();}).then(data=>{sqlGames=data.items;renderHighlights();}).catch(()=>{gamesError=true;renderHighlights();});
 fetch('/api/fields?Sort=newest',{cache:'no-store'}).then(r=>{if(!r.ok)throw Error();return r.json();}).then(data=>{sqlTotal=data.total;sqlFields=data.items.map(f=>({...f,amenities:f.amenities.map(a=>a.name).join(', ')}));renderHighlights();}).catch(()=>{fieldsGrid.innerHTML='<p class="home-empty">Field information is temporarily unavailable.</p>';});
 fetch('/api/field-cities',{cache:'no-store'}).then(r=>r.json()).then(cities=>{for(const name of cities)if(![...city.options].some(o=>o.value===name))city.add(new Option(name,name));}).catch(()=>{});

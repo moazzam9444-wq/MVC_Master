@@ -18,7 +18,7 @@ const entities = new Map(model.Entities.map(e => [e.Table, e]));
 const totals = { columns: 0, primaryKeys: 0, foreignKeys: 0, checks: 0, uniqueGuarantees: 0, indexesCovered: 0, computed: 0, literalDefaults: 0, generatedDefaults: 0 };
 assert.equal(model.Tables, 34);
 assert.equal(tables.length, 27);
-assert.equal(model.Columns, 271);
+assert.equal(model.Columns, 284);
 assert.equal(model.Relationships, 76);
 assert.equal(model.DbSets.length, 34);
 assert.deepEqual([...model.DbSets].sort(), model.Entities.map(e => e.Entity).sort());
@@ -31,8 +31,14 @@ for (const [_, name, body] of tables) {
   const retired = new Set(['password_salt','password_algorithm','password_iterations','role']);
   const columns = [...body.matchAll(/^    \[([^\]]+)\] ([^\r\n]+)/gm)]
     .filter(c => name !== 'users' || !retired.has(c[1]));
-  assert.equal(properties.size, columns.length + (name === 'users' ? 11 : ['bookings','challenges'].includes(name) ? 1 : 0), `${name}: unexpected property/column count`);
+  assert.equal(properties.size, columns.length + (name === 'users' ? 11 : ['bookings','challenges'].includes(name) ? 1 : name==='tournaments'?5:name==='tournament_matches'?8:0), `${name}: unexpected property/column count`);
   // The SQL export remains the historical baseline. Check the reviewed additive migration explicitly.
+  if(['tournaments','tournament_matches'].includes(name)){
+    const expected=name==='tournaments'?{creation_key:'uniqueidentifier',description:'nvarchar(2000)',match_duration_minutes:'int',registration_opens_at:'datetimeoffset(0)',registration_closes_at:'datetimeoffset(0)'}:{starts_at:'datetimeoffset(0)',duration_minutes:'int',ends_at:'datetimeoffset(0)',status:'varchar(24)',home_score:'int',away_score:'int',home_penalties:'int',away_penalties:'int'};
+    for(const [column,type]of Object.entries(expected)){const p=properties.get(column);assert(p&&p.Type===type&&p.IsNullable&&p.InitialValue===null&&!p.HasDefault&&!p.Shadow,column+' preserves legacy null compatibility');totals.columns++;if(column==='ends_at'){assert(p.Stored&&p.ComputedSql==='DATEADD(MINUTE, [duration_minutes], [starts_at])'&&p.Generated==='OnAddOrUpdate');totals.computed++;}else assert(p.Generated==='Never');}
+    const additions=e.Checks.filter(c=>c.Name.startsWith(name==='tournaments'?'CK_tournaments_phase6':'CK_tournament_matches_phase6_'));assert.equal(additions.length,name==='tournaments'?1:5);totals.checks+=additions.length;
+    const index=e.Indexes.find(i=>i.Name===(name==='tournaments'?'UQ_tournaments_creation_key':'IX_tournament_matches_schedule'));assert(index&&index.IsUnique===(name==='tournaments')&&index.Filter===(name==='tournaments'?'[creation_key] IS NOT NULL':'[starts_at] IS NOT NULL'));
+  }
   if(name==='challenges'){
     const duration=properties.get('duration_minutes');
     assert(duration && duration.Type==='int' && !duration.IsNullable && duration.DefaultValue===60 && duration.InitialValue===60 && duration.Generated==='Never');
@@ -99,7 +105,7 @@ for (const [_, name, body] of tables) {
   }
   const checks = [...body.matchAll(/CONSTRAINT \[([^\]]+)\] CHECK \(([^\n]+)\)/g)]
     .filter(c => !['CK_users_password_iterations','CK_users_role_enum'].includes(c[1]));
-  assert.equal(e.Checks.length, checks.length+(name==='bookings'?2:name==='challenges'?1:0));
+  assert.equal(e.Checks.length, checks.length+(name==='bookings'?2:name==='challenges'?1:name==='tournaments'?1:name==='tournament_matches'?5:0));
   for (const [__, checkName, expression] of checks) {
     totals.checks++;
     const expected=checkName==='CK_bookings_rule_4'?'DATEPART(TZOFFSET,[starts_at]) = 180 AND DATEPART(HOUR,[starts_at]) BETWEEN 13 AND 22':expression;
@@ -154,7 +160,7 @@ assert.deepEqual(alternateKeys, [
   'UQ_tournament_matches_tournament_id_id',
   'UQ_tournament_registrations_tournament_id_id'
 ]);
-assert.deepEqual(totals, {columns:228,primaryKeys:27,foreignKeys:68,checks:78,uniqueGuarantees:15,indexesCovered:60,computed:3,literalDefaults:38,generatedDefaults:16});
+assert.deepEqual(totals, {columns:241,primaryKeys:27,foreignKeys:68,checks:84,uniqueGuarantees:15,indexesCovered:60,computed:4,literalDefaults:38,generatedDefaults:16});
 const user = entities.get('users');
 for (const retired of ['password_salt','password_algorithm','password_iterations','role'])
   assert.ok(!user.Properties.some(p => p.Column === retired));

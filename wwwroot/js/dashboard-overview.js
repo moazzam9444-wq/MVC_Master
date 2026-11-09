@@ -16,7 +16,7 @@
       return [
         { title: "Your bookings", value: window.KicksBookings?.summary.total ?? bookings.length, note: "All statuses", link: "bookings", icon: "◷" },
         { title: "Games joined", value: window.KicksActivitySummary?.total ?? 0, note: "Active match entries", link: "memberships", icon: "◎" },
-        { title: "Team entries", value: getRecords("registrations").filter((row) => row.status === "Registered").length, note: "Active tournament entries", link: "registrations", icon: "◇" },
+        { title: "Team entries", value: (window.KicksTournamentSummary?.total ?? 0), note: "Active tournament entries", link: "registrations", icon: "◇" },
       ];
 
     if (role === "owner") {
@@ -24,14 +24,14 @@
         { title: "Your fields", value: window.KicksServerFields?.summary.total ?? 0, note: "Fields in your account", link: "fields", icon: "▦" },
         { title: "Active matches", value: window.KicksActivitySummary?.total ?? 0, note: "Upcoming and in progress", link: "games", icon: "◎" },
         { title: "Players joined", value: window.KicksActivitySummary?.participants ?? 0, note: "Across your matches", link: "games", icon: "○" },
-        { title: "Active tournaments", value: getRecords("tournaments").filter((row) => activeEvent("tournaments", row)).length, note: "On your pitches", link: "tournaments", icon: "◇" },
+        { title: "Active tournaments", value: (window.KicksTournamentSummary?.total ?? 0), note: "On your pitches", link: "tournaments", icon: "◇" },
       ];
     }
 
     return [
       { title: "Football fields", value: getRecords("fields").length, note: "Across the platform", link: "fields", icon: "▦" },
       { title: "Bookings", value: bookings.length, note: "All statuses", link: "bookings", icon: "◷" },
-      { title: "Competitions", value: (window.KicksActivitySummary?.total ?? 0) + getRecords("tournaments").length, note: "Games + tournaments", link: "tournaments", icon: "◇" },
+      { title: "Competitions", value: (window.KicksActivitySummary?.total ?? 0) + (window.KicksTournamentSummary?.total ?? 0), note: "Games + tournaments", link: "tournaments", icon: "◇" },
       { title: "Platform revenue", value: platformCommission.toFixed(2) + " JD", note: "Commissions + listing fees (local)", link: "revenue", icon: "↗" },
     ];
   }
@@ -83,7 +83,7 @@
         (row) => row.fieldId === field.id && ["Pending", "Confirmed"].includes(row.status) && !KicksStore.hasEnded("bookings", row),
       ).length;
       const matches = window.KicksActivitySummary?.byField?.find(x=>x.fieldId===field.id)?.count ?? 0;
-      const cups = getRecords("tournaments").filter((row) => row.fieldId === field.id && activeEvent("tournaments", row)).length;
+      const cups = window.KicksTournamentSummary?.byField?.find(x=>x.fieldId===field.id)?.count ?? 0;
       rows += `<tr>
         <td><strong>${escapeHtml(field.name)}</strong><small class="overview-time">${escapeHtml(field.city)} · ${escapeHtml(field.type)}</small></td>
         <td>${activeBookings}</td><td>${matches}</td><td>${cups}</td>
@@ -209,7 +209,7 @@
       chartItems = [
         { label: "Bookings", value: bookings.length },
         { label: "Games", value: window.KicksActivitySummary?.total ?? 0 },
-        { label: "Tournaments", value: getRecords("registrations").filter((row) => row.status === "Registered").length },
+        { label: "Tournaments", value: (window.KicksTournamentSummary?.total ?? 0) },
       ];
       donutItems = ["Pending", "Confirmed", "Completed", "Cancelled"].map((status) => ({
         label: status,
@@ -232,7 +232,7 @@
       donutItems = [
         { label: "Bookings", value: bookings.filter((row) => ["Pending", "Confirmed"].includes(row.status) && !KicksStore.hasEnded("bookings", row)).length },
         { label: "Matches", value: window.KicksActivitySummary?.total ?? 0 },
-        { label: "Tournaments", value: getRecords("tournaments").filter((row) => activeEvent("tournaments", row)).length },
+        { label: "Tournaments", value: (window.KicksTournamentSummary?.total ?? 0) },
       ];
     } else {
       chartTitle = "Platform activity";
@@ -240,7 +240,7 @@
       chartItems = [
         { label: "Fields", value: getRecords("fields").length },
         { label: "Games", value: window.KicksActivitySummary?.total ?? 0 },
-        { label: "Tournaments", value: getRecords("tournaments").length },
+        { label: "Tournaments", value: (window.KicksTournamentSummary?.total ?? 0) },
         { label: "Bookings", value: bookings.length },
         { label: "Accounts", value: getRecords("users").length },
       ];

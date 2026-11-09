@@ -29,12 +29,12 @@
     <script src="../../js/navigation.js?v=1" defer></script>
 <script src="../../js/dialogs.js?v=1" defer></script>
 <script src="../../js/full-demo.js?v=coordinated-writes-1" defer></script><script src="../../js/admin-account.js?v=restored-1" defer></script>
-<script src="../../js/bracket-core.js?v=1" defer></script>
+
 <script src="../../js/demo-data.js?v=preserve-legacy-3" defer></script>
 <script src="../../js/data-store.js?v=coordinated-writes-1" defer></script>
 @await Html.PartialAsync("_AuthState")
 <script src="../../js/account.js?identity-1" defer></script>
-<script src="../../js/tournaments.js?v=coordinated-writes-1" defer></script>
+
     <link rel="stylesheet" href="../../css/creative.css?v=cleanup-1" />
   <link rel="stylesheet" href="../../css/account.css?v=accounts-7">
 
@@ -42,12 +42,12 @@
 <script src="../../js/theme.js?v=premium-1"></script>
 <link rel="stylesheet" href="../../css/footer.css?v=shared-1">
 <link rel="stylesheet" href="../../css/checkout.css?v=1">
-<script src="../../js/checkout.js?v=1" defer></script>
+
 <link rel="stylesheet" href="../../css/meetings.css?v=1">
 
 
 <link rel="stylesheet" href="../../css/discovery.css?v=chat-3">
-<link rel="stylesheet" href="../../css/tournament-bracket.css?v=1"><script src="../../js/tournament-bracket.js?v=coordinated-writes-1" defer></script><link rel="stylesheet" href="../../css/dialogs.css?v=1">
+<link rel="stylesheet" href="../../css/tournament-bracket.css?v=1"><link rel="stylesheet" href="../../css/dialogs.css?v=1">
 
 <link rel="stylesheet" href="../../css/premium-shell.css?v=1">
 
@@ -56,7 +56,7 @@
 <link rel="stylesheet" href="../../css/kicks-system.css?v=1">
 <link rel="stylesheet" href="../../css/kicks-secondary.css?v=1">
 <script src="../../js/secondary-presentation.js?v=1" defer></script>
-<link rel="stylesheet" href="../../css/table-pagination.css?v=1"><script src="../../js/table-pagination.js?v=1" defer></script></head>
+<link rel="stylesheet" href="../../css/table-pagination.css?v=1"><script src="../../js/table-pagination.js?v=1" defer></script><link rel="stylesheet" href="/css/server-tournaments.css?v=phase6-1"><script src="/js/server-tournaments.js?v=phase6-1" defer></script></head>
   <body class="kx-page kx-secondary">
     <a class="skip-link" href="#mainContent">Skip to content</a>
     <nav class="navbar navbar-expand-xl" aria-label="Main navigation">
@@ -86,148 +86,7 @@
         </div>
       </div>
     </nav>
-    <main id="mainContent">
-      <section class="container cup-detail">
-        <nav class="cup-breadcrumb" aria-label="Breadcrumb">
-          <a href="tournaments.html">← All tournaments</a>
-        </nav>
-        <div id="cupMissing" class="empty-state" hidden>
-          <h1>Tournament unavailable</h1>
-          <p>This tournament has ended or is no longer public. Your team entry stays in your dashboard history.</p>
-          <a href="tournaments.html">Explore tournaments →</a>
-        </div>
-        <div id="cupContent" hidden>
-          <p class="eyebrow">YOUR TEAM. YOUR CHALLENGE.</p>
-          <h1 id="cupTitle"></h1>
-          <p id="cupLocation" class="cup-subtitle"></p>
-
-          <div class="cup-detail-layout">
-            <div>
-              <div class="cup-cover">
-                <img id="cupPhoto" alt="" /><span
-                  ><i class="bi bi-trophy" aria-hidden="true"></i> PLAY FOR THE
-                  MOMENT</span
-                >
-              </div>
-              <section class="cup-panel">
-                <h2>The tournament at a glance</h2>
-                <div id="cupFacts" class="cup-facts"></div>
-              </section>
-              <section class="cup-panel">
-                <h2>The format</h2>
-                <p id="cupSystem"></p>
-                <p>
-                  Teams compete at one venue. A live match schedule and draw
-                  will be published when tournament management is connected.
-                </p>
-                <a id="cupFieldLink" class="cup-text-link"
-                  >View field details →</a
-                >
-              </section>
-              <section class="cup-panel">
-                <h2>What you're playing for</h2>
-                <div class="cup-prize">
-                  <i class="bi bi-trophy" aria-hidden="true"></i>
-                  <div>
-                    <strong id="cupPrize"></strong
-                    ><span>Winner’s prize</span>
-                  </div>
-                </div>
-              </section>
-
-              <section class="cup-panel"><h2>Registered teams</h2><div id="registeredTeamList"></div></section><section class="cup-panel">
-                <h2>Before you register</h2>
-                <ul>
-                  <li>
-                    One registration per team. The captain is the main contact.
-                  </li>
-                  <li>
-                    Bring a complete squad and suitable football footwear.
-                  </li>
-                  <li>Arrive 30 minutes before the opening match.</li>
-                  <li>Respect officials, opponents and the venue.</li>
-                </ul>
-
-              </section>
-            </div>
-            <aside class="cup-registration">
-              <p class="eyebrow">TAKE YOUR PLACE</p>
-              <p class="cup-entry">
-                <strong id="cupFee"></strong> JD <span>/ team</span>
-              </p>
-              <p id="cupAvailability" role="status"></p>
-              <progress
-                id="cupProgress"
-                aria-label="Registered teams"
-              ></progress>
-              <p id="cupTeamCount"></p>
-              <form id="teamForm" novalidate>
-                <label for="teamSelect">Your team</label><select id="teamSelect" aria-describedby="teamRosterHint"></select><p id="teamRosterHint"></p><a href="../Teams/teams.html">Create or manage your team ↗</a><label for="teamName" hidden>Registered name</label
-                ><input
-                  id="teamName" readonly hidden
-                  maxlength="60"
-                  required
-                  autocomplete="off"
-                  placeholder="Your team name"
-                  aria-describedby="teamError"
-                />
-                <p id="teamError" class="cup-error"></p>
-                <label for="captainName">Captain name</label
-                ><input
-                  id="captainName" readonly
-                  maxlength="100"
-                  required
-                  autocomplete="name"
-                  placeholder="Team captain"
-                  aria-describedby="captainError"
-                />
-                <p id="captainError" class="cup-error"></p>
-                <label for="captainEmail">Captain email</label
-                ><input
-                  id="captainEmail" readonly
-                  type="email"
-                  maxlength="254"
-                  required
-                  autocomplete="email"
-                  placeholder="captain@@example.com"
-                  aria-describedby="emailError"
-                />
-                <p id="emailError" class="cup-error"></p>
-                <button id="teamSubmit" class="apply-filters">
-                  Register team ↗
-                </button>
-                <p id="teamStatus" class="cup-error" role="status"></p>
-
-              </form>
-            </aside>
-          </div>
-        </div>
-      </section>
-      <section class="container"><div id="tournamentBracket" class="tournament-bracket"></div></section>
-      <dialog id="teamDialog" aria-labelledby="teamDialogTitle">
-        <form method="dialog">
-          <button class="dialog-close" aria-label="Close registration confirmation">
-            ×
-          </button>
-        </form>
-        <div class="cup-dialog-icon">
-          <i class="bi bi-trophy" aria-hidden="true"></i>
-        </div>
-        <p class="eyebrow">YOUR NEXT CHALLENGE</p>
-        <h2 id="teamDialogTitle">Team registered</h2>
-        <p id="teamPreview"></p>
-
-        <form method="dialog">
-          <button class="apply-filters">Back to tournament</button>
-        </form>
-      </dialog>
-      <noscript
-        ><div class="container empty-state">
-          <h2>Tournaments</h2>
-          <p>Enable JavaScript to view tournament data.</p>
-        </div></noscript
-      >
-    </main>
+    <main id="mainContent">@await Html.PartialAsync("_Tournaments", "details")</main>
     <footer class="kicks-footer" aria-label="KICKS footer">
   <div class="kf-inner">
     <div class="kf-grid">
@@ -264,7 +123,7 @@
   <script src="../../js/site-polish.js?v=cleanup-1" defer></script>
 <script src="../../js/jordan-places.js?v=1" defer></script>
 <script src="../../js/place-resolver.js?v=1" defer></script>
-<script src="../../js/discovery.js?v=audit-20261102-1" defer></script>
-<script src="../../js/discovery-ui.js?v=audit-20261102-1" defer></script>
+
+
 </body>
 </html>

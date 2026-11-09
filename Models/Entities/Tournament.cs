@@ -6,6 +6,11 @@ public class Tournament
     public int CreatedBy { get; set; }
     public int FieldId { get; set; }
     public string Name { get; set; } = string.Empty;
+    public string? Description { get; set; }
+    public DateTimeOffset? RegistrationOpensAt { get; set; }
+    public DateTimeOffset? RegistrationClosesAt { get; set; }
+    public int? MatchDurationMinutes { get; set; }
+    public Guid? CreationKey { get; set; }
     public DateTimeOffset StartsAt { get; set; }
     public int DurationMinutes { get; set; }
     public DateTimeOffset EndsAt { get; set; }

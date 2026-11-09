@@ -33,7 +33,7 @@
 <script src="../../js/data-store.js?v=coordinated-writes-1" defer></script>
 @await Html.PartialAsync("_AuthState")
 <script src="../../js/account.js?identity-1" defer></script>
-<script src="../../js/tournaments.js?v=coordinated-writes-1" defer></script>
+
     <link rel="stylesheet" href="../../css/creative.css?v=cleanup-1" />
   <link rel="stylesheet" href="../../css/account.css?v=accounts-7">
 
@@ -41,7 +41,7 @@
 <script src="../../js/theme.js?v=premium-1"></script>
 <link rel="stylesheet" href="../../css/footer.css?v=shared-1">
 <link rel="stylesheet" href="../../css/checkout.css?v=1">
-<script src="../../js/checkout.js?v=1" defer></script>
+
 <link rel="stylesheet" href="../../css/discovery.css?v=compact-toolbar-4">
 <link rel="stylesheet" href="../../css/dialogs.css?v=1">
 
@@ -52,7 +52,7 @@
 <link rel="stylesheet" href="../../css/kicks-system.css?v=1">
 <link rel="stylesheet" href="../../css/kicks-secondary.css?v=1">
 <script src="../../js/secondary-presentation.js?v=1" defer></script>
-<link rel="stylesheet" href="../../css/table-pagination.css?v=1"><script src="../../js/table-pagination.js?v=1" defer></script></head>
+<link rel="stylesheet" href="../../css/table-pagination.css?v=1"><script src="../../js/table-pagination.js?v=1" defer></script><link rel="stylesheet" href="/css/server-tournaments.css?v=phase6-1"><script src="/js/server-tournaments.js?v=phase6-1" defer></script></head>
   <body class="kx-page kx-secondary">
     <a class="skip-link" href="#mainContent">Skip to content</a>
     <nav class="navbar navbar-expand-xl" aria-label="Main navigation">
@@ -82,8 +82,7 @@
         </div>
       </div>
     </nav>
-    <main id="mainContent">
-      <section class="cup-hero">
+    <main id="mainContent"><section class="cup-hero">
         <div class="container cup-hero-layout">
           <div>
             <p class="eyebrow">BRING YOUR TEAM. MAKE YOUR MARK.</p>
@@ -92,7 +91,7 @@
               Build your squad, take on new rivals and turn your next match into
               a story worth telling.
             </p>
-            <a href="#cupResults" class="cup-primary"
+            <a href="#sqlTournaments" class="cup-primary"
               >Find your tournament <span aria-hidden="true">↗</span></a
             >
             <div class="cup-hero-tags">
@@ -108,97 +107,7 @@
             <p>ONE TEAM. ONE GOAL.</p>
           </div>
         </div>
-      </section>
-      <section id="cupResults" class="container cups-section">
-        <div class="catalog-intro">
-          <div>
-            <p class="eyebrow">THE COMPETITION STARTS HERE</p>
-            <h2>Find your next challenge.</h2>
-          </div>
-          <p>
-            Choose your format. Gather your team.<br />Get ready to compete.
-          </p>
-        </div>
-        
-        <form id="cupFilters" class="cup-filters">
-          <div class="cup-search">
-            <label for="cupSearch">Search</label
-            ><input
-              id="cupSearch"
-              name="search"
-              type="search"
-              placeholder="Tournament or field name…"
-            />
-          </div>
-          <div>
-            <label for="cupCity">City</label
-            ><select id="cupCity" name="city">
-              <option value="">All cities</option>
-              <option>Amman</option>
-<option>Irbid</option>
-<option>Zarqa</option>
-<option>Ajloun</option>
-<option>Jerash</option>
-<option>Mafraq</option>
-<option>Balqa</option>
-<option>Madaba</option>
-<option>Karak</option>
-<option>Tafilah</option>
-<option>Ma'an</option>
-<option>Aqaba</option>
-            </select>
-          </div>
-          <div>
-            <label for="cupFormat">Team format</label
-            ><select id="cupFormat" name="format">
-              <option value="">All formats</option>
-              <option>5v5</option>
-              <option>6v6</option>
-              <option>7v7</option>
-            </select>
-          </div>
-          <label class="cup-check"
-            ><input type="checkbox" name="open" /> Registration open</label
-          ><button type="button" data-clear-cups>Clear</button>
-        </form>
-        <div class="results-toolbar">
-          <div role="status" aria-live="polite">
-            <h2 id="cupCount"></h2>
-            <p>Make your next match count.</p>
-          </div>
-          <div class="sort-control">
-            <label for="cupSort">Sort by</label
-            ><select id="cupSort" aria-label="Sort tournaments">
-              <option value="date">Soonest first</option>
-              <option value="fee">Lowest entry fee</option>
-              <option value="spots">Most team spots</option>
-            </select>
-          </div>
-        </div>
-        <div id="cupGrid" class="cup-grid"></div>
-        <div id="cupEmpty" class="empty-state" hidden>
-          <h3>No tournaments found</h3>
-          <p>Try another city, format or search.</p>
-          <button type="button" class="apply-filters" data-clear-cups>
-            Clear filters
-          </button>
-        </div>
-      </section>
-      <section class="fields-cta container">
-        <div>
-          <p class="eyebrow">GET MATCH READY</p>
-          <h2>Big moments start with practice.</h2>
-          <p>Find a pitch for your next team session.</p>
-        </div>
-        <a href="../Fields/fields.html">Explore fields ↗</a>
-      </section>
-      <noscript
-        ><div class="container empty-state">
-          <h2>Tournaments</h2>
-          <p>Enable JavaScript to view tournament data.</p>
-        </div></noscript
-      >
-    </main>
+      </section>@await Html.PartialAsync("_Tournaments", "index")</main>
     <footer class="kicks-footer" aria-label="KICKS footer">
   <div class="kf-inner">
     <div class="kf-grid">
@@ -235,8 +144,8 @@
   <script src="../../js/site-polish.js?v=cleanup-1" defer></script>
 <script src="../../js/jordan-places.js?v=1" defer></script>
 <script src="../../js/place-resolver.js?v=1" defer></script>
-<script src="../../js/discovery.js?v=audit-20261102-1" defer></script>
-<script src="../../js/nearby-catalogue.js?v=toolbar-2" defer></script>
-<script src="../../js/discovery-ui.js?v=audit-20261102-1" defer></script>
+
+
+
 </body>
 </html>

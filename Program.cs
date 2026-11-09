@@ -51,6 +51,7 @@ builder.Services.AddScoped<KicksMvc.Services.Teams.TeamLogoStore>();
 builder.Services.AddScoped<KicksMvc.Services.Activities.ActivityRules>();
 builder.Services.AddScoped<KicksMvc.Services.Activities.OpenGameService>();
 builder.Services.AddScoped<KicksMvc.Services.Activities.ChallengeService>();
+builder.Services.AddScoped<KicksMvc.Services.Tournaments.TournamentService>();
 builder.Services.AddScoped<FieldImageStore>();
 builder.Services.AddSingleton(TimeProvider.System);
 builder.Services.AddScoped<BookingService>();

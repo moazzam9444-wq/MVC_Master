@@ -6,6 +6,14 @@ public class TournamentMatche
     public int TournamentId { get; set; }
     public int RoundNumber { get; set; }
     public int MatchNumber { get; set; }
+    public DateTimeOffset? StartsAt { get; set; }
+    public int? DurationMinutes { get; set; }
+    public DateTimeOffset? EndsAt { get; set; }
+    public string? Status { get; set; }
+    public int? HomeScore { get; set; }
+    public int? AwayScore { get; set; }
+    public int? HomePenalties { get; set; }
+    public int? AwayPenalties { get; set; }
     public int? WinnerRegistrationId { get; set; }
     public bool IsBye { get; set; } = false;
     public int? UpdatedBy { get; set; }

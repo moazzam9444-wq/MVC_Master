@@ -1366,6 +1366,14 @@ namespace KicksMvc.Data.Migrations
                         .HasColumnType("int")
                         .HasColumnName("created_by");
 
+                    b.Property<Guid?>("CreationKey")
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("creation_key");
+
+                    b.Property<string>("Description")
+                        .HasColumnType("nvarchar(2000)")
+                        .HasColumnName("description");
+
                     b.Property<DateTimeOffset?>("DrawStartedAt")
                         .HasColumnType("datetimeoffset(0)")
                         .HasColumnName("draw_started_at");
@@ -1393,6 +1401,10 @@ namespace KicksMvc.Data.Migrations
                         .HasColumnType("nvarchar(40)")
                         .HasColumnName("level");
 
+                    b.Property<int?>("MatchDurationMinutes")
+                        .HasColumnType("int")
+                        .HasColumnName("match_duration_minutes");
+
                     b.Property<string>("Name")
                         .IsRequired()
                         .HasColumnType("nvarchar(120)")
@@ -1402,6 +1414,14 @@ namespace KicksMvc.Data.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(200)")
                         .HasColumnName("prize");
+
+                    b.Property<DateTimeOffset?>("RegistrationClosesAt")
+                        .HasColumnType("datetimeoffset(0)")
+                        .HasColumnName("registration_closes_at");
+
+                    b.Property<DateTimeOffset?>("RegistrationOpensAt")
+                        .HasColumnType("datetimeoffset(0)")
+                        .HasColumnName("registration_opens_at");
 
                     b.Property<DateTimeOffset>("StartsAt")
                         .HasColumnType("datetimeoffset(0)")
@@ -1428,6 +1448,11 @@ namespace KicksMvc.Data.Migrations
                     b.HasIndex("CreatedBy")
                         .HasDatabaseName("IX_tournaments_0");
 
+                    b.HasIndex("CreationKey")
+                        .IsUnique()
+                        .HasDatabaseName("UQ_tournaments_creation_key")
+                        .HasFilter("[creation_key] IS NOT NULL");
+
                     b.HasIndex("FieldId")
                         .HasDatabaseName("IX_tournaments_1");
 
@@ -1438,6 +1463,8 @@ namespace KicksMvc.Data.Migrations
                             t.HasCheckConstraint("CK_tournaments_duration_minutes", "[duration_minutes] > 0");
 
                             t.HasCheckConstraint("CK_tournaments_entry_fee", "[entry_fee] >= 0");
+
+                            t.HasCheckConstraint("CK_tournaments_phase6", "[match_duration_minutes] IS NULL OR ([match_duration_minutes] IN (60,120) AND [creation_key] IS NOT NULL AND [registration_opens_at] IS NOT NULL AND [registration_closes_at] IS NOT NULL AND [registration_opens_at] < [registration_closes_at] AND [registration_closes_at] <= [starts_at] AND DATEPART(TZOFFSET,[registration_opens_at])=180 AND DATEPART(TZOFFSET,[registration_closes_at])=180)");
 
                             t.HasCheckConstraint("CK_tournaments_rule_1", "[status] <> 'Cancelled' OR ([cancelled_by] IS NOT NULL AND [cancelled_at] IS NOT NULL)");
 
@@ -1530,6 +1557,32 @@ namespace KicksMvc.Data.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
+                    b.Property<int?>("AwayPenalties")
+                        .HasColumnType("int")
+                        .HasColumnName("away_penalties");
+
+                    b.Property<int?>("AwayScore")
+                        .HasColumnType("int")
+                        .HasColumnName("away_score");
+
+                    b.Property<int?>("DurationMinutes")
+                        .HasColumnType("int")
+                        .HasColumnName("duration_minutes");
+
+                    b.Property<DateTimeOffset?>("EndsAt")
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("datetimeoffset(0)")
+                        .HasColumnName("ends_at")
+                        .HasComputedColumnSql("DATEADD(MINUTE, [duration_minutes], [starts_at])", true);
+
+                    b.Property<int?>("HomePenalties")
+                        .HasColumnType("int")
+                        .HasColumnName("home_penalties");
+
+                    b.Property<int?>("HomeScore")
+                        .HasColumnType("int")
+                        .HasColumnName("home_score");
+
                     b.Property<bool>("IsBye")
                         .HasColumnType("bit")
                         .HasDefaultValue(false)
@@ -1542,6 +1595,14 @@ namespace KicksMvc.Data.Migrations
                     b.Property<int>("RoundNumber")
                         .HasColumnType("int")
                         .HasColumnName("round_number");
+
+                    b.Property<DateTimeOffset?>("StartsAt")
+                        .HasColumnType("datetimeoffset(0)")
+                        .HasColumnName("starts_at");
+
+                    b.Property<string>("Status")
+                        .HasColumnType("varchar(24)")
+                        .HasColumnName("status");
 
                     b.Property<int>("TournamentId")
                         .HasColumnType("int")
@@ -1565,6 +1626,10 @@ namespace KicksMvc.Data.Migrations
                     b.HasAlternateKey("TournamentId", "Id")
                         .HasName("UQ_tournament_matches_tournament_id_id");
 
+                    b.HasIndex("StartsAt")
+                        .HasDatabaseName("IX_tournament_matches_schedule")
+                        .HasFilter("[starts_at] IS NOT NULL");
+
                     b.HasIndex("UpdatedBy")
                         .HasDatabaseName("IX_tournament_matches_2");
 
@@ -1580,6 +1645,16 @@ namespace KicksMvc.Data.Migrations
                     b.ToTable("tournament_matches", "dbo", t =>
                         {
                             t.HasCheckConstraint("CK_tournament_matches_match_number", "[match_number] BETWEEN 1 AND 32");
+
+                            t.HasCheckConstraint("CK_tournament_matches_phase6_duration", "[duration_minutes] IS NULL OR [duration_minutes] IN (60,120)");
+
+                            t.HasCheckConstraint("CK_tournament_matches_phase6_result", "[status] <> 'Completed' OR ([winner_registration_id] IS NOT NULL AND ([is_bye]=1 OR ([starts_at] IS NOT NULL AND [duration_minutes] IS NOT NULL AND [home_score] IS NOT NULL AND [away_score] IS NOT NULL AND (([home_score]<>[away_score] AND [home_penalties] IS NULL AND [away_penalties] IS NULL) OR ([home_score]=[away_score] AND [home_penalties] IS NOT NULL AND [away_penalties] IS NOT NULL AND [home_penalties]<>[away_penalties])))))");
+
+                            t.HasCheckConstraint("CK_tournament_matches_phase6_schedule", "[status] <> 'Scheduled' OR ([starts_at] IS NOT NULL AND [duration_minutes] IS NOT NULL AND DATEPART(TZOFFSET,[starts_at])=180 AND CONVERT(time(0),[starts_at])=TIMEFROMPARTS(DATEPART(HOUR,[starts_at]),0,0,0,0) AND DATEPART(HOUR,[starts_at])>=13 AND DATEPART(HOUR,[starts_at])+[duration_minutes]/60<=23)");
+
+                            t.HasCheckConstraint("CK_tournament_matches_phase6_scores", "([home_score] IS NULL OR [home_score] BETWEEN 0 AND 99) AND ([away_score] IS NULL OR [away_score] BETWEEN 0 AND 99) AND ([home_penalties] IS NULL OR [home_penalties] BETWEEN 0 AND 99) AND ([away_penalties] IS NULL OR [away_penalties] BETWEEN 0 AND 99)");
+
+                            t.HasCheckConstraint("CK_tournament_matches_phase6_status", "[status] IS NULL OR [status] IN ('Draft','Scheduled','Completed','Cancelled')");
 
                             t.HasCheckConstraint("CK_tournament_matches_round_number", "[round_number] BETWEEN 1 AND 6");
                         });

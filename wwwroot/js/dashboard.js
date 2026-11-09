@@ -83,9 +83,12 @@
   const getRecord = (kind, id) => {
     if(kind === 'fields'){const booking=window.KicksBookings?.summary.items.find(b=>b.fieldId===id);if(booking)return {id,name:booking.fieldName,city:booking.city,area:booking.area};}
     if(kind==='games')return getVisibleRecords('games').find(g=>g.id===id);
+    if(kind==='tournaments')return getVisibleRecords('tournaments').find(t=>t.id===id);
     return store.find(kind,id);
   };
   function getVisibleRecords(kind) {
+    if(kind==='tournaments')return (window.KicksTournamentSummary?.items||[]).map(t=>({...t,date:t.startsAt.slice(0,10),time:t.startsAt.slice(11,16),_sqlActive:true}));
+    if(kind==='registrations')return getVisibleRecords('tournaments').map(t=>({tournamentId:t.id,status:'Registered'}));
     if(kind==='games')return (window.KicksActivitySummary?.items||[]).map(g=>({...g,date:g.startsAt.slice(0,10),time:g.startsAt.slice(11,16),_sqlActive:true}));
     if(kind==='memberships')return getVisibleRecords('games').map(g=>({gameId:g.id,status:'Joined'}));
     if(kind === "bookings")return role==='admin'?[]:(window.KicksBookings?.summary.items||[]).map(b=>({...b,date:b.startsAt.slice(0,10),time:b.startsAt.slice(11,16)}));
@@ -150,6 +153,7 @@
       sidebarProfile.innerHTML = photo + '<span><strong>'+escapeHtml(u.name)+'</strong><small>'+escapeHtml(role === 'owner' ? 'Field owner' : role)+' account</small></span><b aria-hidden="true">↗</b>';
     }
     getElement("storageWarning").hidden = store.persistent();
+    if(["tournaments","registrations"].includes(view)){location.assign("/Pages/Tournaments/tournaments.html?mode="+(role==="owner"?"mine":role==="player"&&view==="registrations"?"registered":"browse"));return;}
     if(["games","memberships"].includes(view)){location.assign("/Pages/OpenGames/open-games.html?mode="+(role==="owner"?"mine":view==="memberships"?"joined":"browse"));return;}
     if(view === "bookings" && ['player','owner'].includes(role)){KicksBookings.render();return;}
     if(view === "bookings" && role === "admin"){getElement('dashboardView').innerHTML='<section class="dash-panel"><h2>Bookings</h2><p>Reservations are managed by players and field owners.</p></section>';return;}
@@ -1122,6 +1126,7 @@
   store.watchActivityClock(() => {
     if (["overview", "games", "tournaments", "bookings", "memberships", "registrations"].includes(view)) renderDashboard();
   });
+  fetch('/api/tournaments/summary',{credentials:'same-origin',cache:'no-store'}).then(async r=>{if(!r.ok||r.redirected)throw Error('Unavailable');window.KicksTournamentSummary=await r.json();if(view==='overview')renderDashboard();}).catch(()=>{});
   fetch(role==='admin'?'/api/games':'/api/activities/summary',{credentials:'same-origin',cache:'no-store'}).then(async r=>{if(!r.ok||r.redirected)throw Error('Unavailable');window.KicksActivitySummary=await r.json();if(view==='overview')renderDashboard();}).catch(()=>{});
   renderDashboard();
 })();

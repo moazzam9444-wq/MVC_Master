@@ -21,7 +21,11 @@ using System.Security.Cryptography;
 
 TestDatabase.RequireIsolated();
 if(args.Contains("--verify-test-isolation")){Console.WriteLine("PASS: explicit restored test database identity verified.");return;}
-if(args.Contains("--phase5"))await Phase5Tests.Run();
+if(args.Contains("--tournaments"))await TournamentTests.Run();
+else if(args.Contains("--tournament-browser-setup"))await TournamentTests.Fixture(args[^1],"setup");
+else if(args.Contains("--tournament-browser-cleanup"))await TournamentTests.Fixture(args[^1],"cleanup");
+else if(args.Contains("--tournament-browser-ended"))await TournamentTests.Fixture(args[^1],"ended");
+else if(args.Contains("--phase5"))await Phase5Tests.Run();
 else if(args.Contains("--phase5-browser-setup"))await Phase5Tests.Fixture(args[^1],false);
 else if(args.Contains("--phase5-browser-cleanup"))await Phase5Tests.Fixture(args[^1],true);
 else if(args.Contains("--teams"))await TeamTests.Run();

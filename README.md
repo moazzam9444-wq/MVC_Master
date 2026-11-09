@@ -57,7 +57,9 @@ Teams management now uses SQL Server through the existing Teams page: player-cre
 
 Open Games and Team Challenges now use SQL Server. Active owners schedule games on their own fields; Active players join directly without approval. Current captains send, accept, reject and withdraw team proposals. Accepted proposals with a field create an unpaid reservation through the shared field-row occupancy gate; fieldless acceptance is agreement only. See [Phase 5 completion and safety verification](docs/backend/OPEN-GAMES-CHALLENGES-COMPLETE.md).
 
-Tournaments, messages and payments retain their separate prototype workflows for later phases. Migrated bookings, teams, Open Games and Challenges never use browser storage as authoritative persistence or create fake payments. Profile editing/password changes remain deferred.
+Tournament management now uses SQL Server: owner-created single-elimination tournaments for 2–64 teams, immediate captain registration, frozen rosters, deterministic draws/byes, per-match field reservations, score/shootout finalization, advancement and champion. Event windows do not reserve whole fields. Completed results are immutable; group stages and payments are not implemented. See [Phase 6 completion and safety verification](docs/backend/TOURNAMENTS-COMPLETE.md).
+
+Messaging and payments retain their separate prototype workflows for later phases. Migrated bookings, teams, Open Games, Challenges and tournaments never use browser storage as authoritative persistence or create fake payments. Profile editing/password changes remain deferred.
 
 Field amenities were initialized explicitly once with six reference choices. For another development environment with the same reviewed schema, the idempotent reference-data command is `dotnet run --project KicksMvc.csproj --launch-profile KicksMvc -- --initialize-field-amenities`. Ordinary startup never runs this command or changes the schema. Back up `App_Data/field-images` with SQL; these public venue images are separate from private ownership documents.
 

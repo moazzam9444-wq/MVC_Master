@@ -256,6 +256,7 @@ public class KicksDbContext(DbContextOptions<KicksDbContext> options) : Identity
             e.ToTable("tournaments", "dbo", table =>
             {
                 table.HasCheckConstraint("CK_tournaments_duration_minutes", "[duration_minutes] > 0");
+                table.HasCheckConstraint("CK_tournaments_phase6", "[match_duration_minutes] IS NULL OR ([match_duration_minutes] IN (60,120) AND [creation_key] IS NOT NULL AND [registration_opens_at] IS NOT NULL AND [registration_closes_at] IS NOT NULL AND [registration_opens_at] < [registration_closes_at] AND [registration_closes_at] <= [starts_at] AND DATEPART(TZOFFSET,[registration_opens_at])=180 AND DATEPART(TZOFFSET,[registration_closes_at])=180)");
                 table.HasCheckConstraint("CK_tournaments_capacity", "[capacity] BETWEEN 2 AND 64");
                 table.HasCheckConstraint("CK_tournaments_entry_fee", "[entry_fee] >= 0");
                 table.HasCheckConstraint("CK_tournaments_system_enum", "[system] IN (N'Single elimination', N'Group stage + knockout')");
@@ -263,6 +264,12 @@ public class KicksDbContext(DbContextOptions<KicksDbContext> options) : Identity
                 table.HasCheckConstraint("CK_tournaments_rule_1", "[status] <> 'Cancelled' OR ([cancelled_by] IS NOT NULL AND [cancelled_at] IS NOT NULL)");
             });
             e.HasKey("Id").HasName("PK_tournaments");
+            e.Property(x=>x.Description).HasColumnName("description").HasColumnType("nvarchar(2000)");
+            e.Property(x=>x.RegistrationOpensAt).HasColumnName("registration_opens_at").HasColumnType("datetimeoffset(0)");
+            e.Property(x=>x.RegistrationClosesAt).HasColumnName("registration_closes_at").HasColumnType("datetimeoffset(0)");
+            e.Property(x=>x.MatchDurationMinutes).HasColumnName("match_duration_minutes").HasColumnType("int");
+            e.Property(x=>x.CreationKey).HasColumnName("creation_key").HasColumnType("uniqueidentifier");
+            e.HasIndex(x=>x.CreationKey).HasDatabaseName("UQ_tournaments_creation_key").IsUnique().HasFilter("[creation_key] IS NOT NULL");
             e.Property(x => x.Id).HasColumnName("id").HasColumnType("int").IsRequired().UseIdentityColumn();
             e.Property(x => x.CreatedBy).HasColumnName("created_by").HasColumnType("int").IsRequired();
             e.Property(x => x.FieldId).HasColumnName("field_id").HasColumnType("int").IsRequired();
@@ -351,9 +358,23 @@ public class KicksDbContext(DbContextOptions<KicksDbContext> options) : Identity
             e.ToTable("tournament_matches", "dbo", table =>
             {
                 table.HasCheckConstraint("CK_tournament_matches_round_number", "[round_number] BETWEEN 1 AND 6");
+                table.HasCheckConstraint("CK_tournament_matches_phase6_status", "[status] IS NULL OR [status] IN ('Draft','Scheduled','Completed','Cancelled')");
+                table.HasCheckConstraint("CK_tournament_matches_phase6_duration", "[duration_minutes] IS NULL OR [duration_minutes] IN (60,120)");
+                table.HasCheckConstraint("CK_tournament_matches_phase6_schedule", "[status] <> 'Scheduled' OR ([starts_at] IS NOT NULL AND [duration_minutes] IS NOT NULL AND DATEPART(TZOFFSET,[starts_at])=180 AND CONVERT(time(0),[starts_at])=TIMEFROMPARTS(DATEPART(HOUR,[starts_at]),0,0,0,0) AND DATEPART(HOUR,[starts_at])>=13 AND DATEPART(HOUR,[starts_at])+[duration_minutes]/60<=23)");
+                table.HasCheckConstraint("CK_tournament_matches_phase6_scores", "([home_score] IS NULL OR [home_score] BETWEEN 0 AND 99) AND ([away_score] IS NULL OR [away_score] BETWEEN 0 AND 99) AND ([home_penalties] IS NULL OR [home_penalties] BETWEEN 0 AND 99) AND ([away_penalties] IS NULL OR [away_penalties] BETWEEN 0 AND 99)");
+                table.HasCheckConstraint("CK_tournament_matches_phase6_result", "[status] <> 'Completed' OR ([winner_registration_id] IS NOT NULL AND ([is_bye]=1 OR ([starts_at] IS NOT NULL AND [duration_minutes] IS NOT NULL AND [home_score] IS NOT NULL AND [away_score] IS NOT NULL AND (([home_score]<>[away_score] AND [home_penalties] IS NULL AND [away_penalties] IS NULL) OR ([home_score]=[away_score] AND [home_penalties] IS NOT NULL AND [away_penalties] IS NOT NULL AND [home_penalties]<>[away_penalties])))))");
                 table.HasCheckConstraint("CK_tournament_matches_match_number", "[match_number] BETWEEN 1 AND 32");
             });
             e.HasKey("Id").HasName("PK_tournament_matches");
+            e.Property(x=>x.StartsAt).HasColumnName("starts_at").HasColumnType("datetimeoffset(0)");
+            e.Property(x=>x.DurationMinutes).HasColumnName("duration_minutes").HasColumnType("int");
+            e.Property(x=>x.EndsAt).HasColumnName("ends_at").HasColumnType("datetimeoffset(0)").HasComputedColumnSql("DATEADD(MINUTE, [duration_minutes], [starts_at])",stored:true);
+            e.Property(x=>x.Status).HasColumnName("status").HasColumnType("varchar(24)");
+            e.Property(x=>x.HomeScore).HasColumnName("home_score").HasColumnType("int");
+            e.Property(x=>x.AwayScore).HasColumnName("away_score").HasColumnType("int");
+            e.Property(x=>x.HomePenalties).HasColumnName("home_penalties").HasColumnType("int");
+            e.Property(x=>x.AwayPenalties).HasColumnName("away_penalties").HasColumnType("int");
+            e.HasIndex(x=>x.StartsAt).HasDatabaseName("IX_tournament_matches_schedule").HasFilter("[starts_at] IS NOT NULL");
             e.Property(x => x.Id).HasColumnName("id").HasColumnType("int").IsRequired().UseIdentityColumn();
             e.Property(x => x.TournamentId).HasColumnName("tournament_id").HasColumnType("int").IsRequired();
             e.Property(x => x.RoundNumber).HasColumnName("round_number").HasColumnType("int").IsRequired();
