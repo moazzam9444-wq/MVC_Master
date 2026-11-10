@@ -67,6 +67,7 @@ builder.Services.AddScoped<KicksMvc.Services.Tournaments.TournamentService>();
 builder.Services.AddScoped<FieldImageStore>();
 builder.Services.AddSingleton(TimeProvider.System);
 builder.Services.AddScoped<BookingService>();
+builder.Services.AddScoped<KicksMvc.Services.Workspace.WorkspaceService>();
 builder.Services.AddScoped<KicksMvc.Services.Payments.SandboxSettings>();
 builder.Services.AddScoped<KicksMvc.Services.Payments.PaymentReservations>();
 builder.Services.AddScoped<KicksMvc.Services.Payments.StripePaymentService>();
@@ -106,12 +107,19 @@ builder.Services.AddRateLimiter(options =>
     options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
     options.OnRejected = async (context, cancellationToken) =>
     {
-        context.HttpContext.Response.Headers.RetryAfter = "60";
+        var feedbackRequest=context.HttpContext.Request.Path=="/feedback";
+        context.HttpContext.Response.Headers.RetryAfter = feedbackRequest?"300":"60";
         context.HttpContext.Response.ContentType = "text/plain; charset=utf-8";
-        await context.HttpContext.Response.WriteAsync("Too many authentication attempts. Wait one minute and try again.", cancellationToken);
+        await context.HttpContext.Response.WriteAsync(feedbackRequest?"Too many feedback submissions. Wait a few minutes and try again.":"Too many requests. Wait one minute and try again.", cancellationToken);
     };
     options.AddPolicy("authentication", context => RateLimitPartition.GetFixedWindowLimiter(
         context.Connection.RemoteIpAddress?.ToString() ?? "unknown", _ => new FixedWindowRateLimiterOptions
+        { PermitLimit = 30, Window = TimeSpan.FromMinutes(1), QueueLimit = 0 }));
+    options.AddPolicy("feedback", context => RateLimitPartition.GetFixedWindowLimiter(
+        context.Connection.RemoteIpAddress?.ToString() ?? "unknown", _ => new FixedWindowRateLimiterOptions
+        { PermitLimit = 5, Window = TimeSpan.FromMinutes(5), QueueLimit = 0 }));
+    options.AddPolicy("messages", context => RateLimitPartition.GetFixedWindowLimiter(
+        context.User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value ?? "anonymous", _ => new FixedWindowRateLimiterOptions
         { PermitLimit = 30, Window = TimeSpan.FromMinutes(1), QueueLimit = 0 }));
 });
 // Explicit CLI only. This branch is never invoked by ordinary application startup.
@@ -122,6 +130,13 @@ if (args.Contains("--provision-admin"))
     return;
 }
 var app = builder.Build();
+app.Use(async(context,next)=>
+{
+    context.Response.Headers.XContentTypeOptions="nosniff";
+    context.Response.Headers.XFrameOptions="DENY";
+    context.Response.Headers["Referrer-Policy"]="strict-origin-when-cross-origin";
+    await next();
+});
 if (!app.Environment.IsDevelopment())
 {
     app.UseExceptionHandler("/error");
@@ -129,13 +144,16 @@ if (!app.Environment.IsDevelopment())
     app.UseHttpsRedirection();
 }
 var types = new FileExtensionContentTypeProvider();
+app.UseWhen(context=>HttpMethods.IsGet(context.Request.Method) &&
+    context.Request.Headers.Accept.ToString().Contains("text/html",StringComparison.OrdinalIgnoreCase) &&
+    !context.Request.Path.StartsWithSegments("/api"),
+    branch=>branch.UseStatusCodePagesWithReExecute("/status/{0}"));
 types.Mappings[".sql"] = "text/plain; charset=utf-8";
 app.UseStaticFiles(new StaticFileOptions { ContentTypeProvider = types });
 app.UseRouting();
-app.UseRateLimiter();
 app.UseAuthentication();
+app.UseRateLimiter();
 app.UseAuthorization();
-app.MapGet("/error", () => Results.Problem("An unexpected error occurred. Please reload the page."));
 app.MapControllers();
 app.Run();
 

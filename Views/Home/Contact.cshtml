@@ -14,8 +14,8 @@
 
 <script src="../../js/navigation.js?v=1" defer></script>
 <script src="../../js/dialogs.js?v=1" defer></script>
-<script src="../../js/full-demo.js?v=coordinated-writes-1" defer></script><script src="../../js/admin-account.js?v=restored-1" defer></script>
-<script src="../../js/demo-data.js?v=preserve-legacy-3" defer></script>
+
+
 <script src="../../js/data-store.js?v=coordinated-writes-1" defer></script>
 @await Html.PartialAsync("_AuthState")
 <script src="../../js/account.js?identity-1" defer></script>
@@ -35,7 +35,8 @@
 <link rel="stylesheet" href="../../css/kicks-system.css?v=1">
 <link rel="stylesheet" href="../../css/kicks-secondary.css?v=1">
 <script src="../../js/secondary-presentation.js?v=1" defer></script>
-<link rel="stylesheet" href="../../css/table-pagination.css?v=1"><script src="../../js/table-pagination.js?v=1" defer></script></head>
+<link rel="stylesheet" href="../../css/table-pagination.css?v=1"><script src="../../js/table-pagination.js?v=1" defer></script>@await Html.PartialAsync("_Phase8Head")
+</head>
 <body class="contact-page kx-page kx-secondary">
 <a class="skip-link" href="#mainContent">Skip to content</a>
 <nav class="navbar navbar-expand-xl" aria-label="Main navigation">
@@ -92,8 +93,9 @@
     </div>
   </section>
 <section class="contact-feedback" aria-labelledby="feedbackTitle"><div class="container feedback-layout">
-<div><p class="contact-eyebrow">HELP SHAPE THE NEXT MATCH</p><h2 id="feedbackTitle">Your feedback.<br><em>A better KICKS.</em></h2><p>Tell me what you enjoyed, what could be better, or what you would love to see next.</p><p class="feedback-local-note">This version saves feedback on the current browser. After saving, you can open an email draft to send it directly to Mohammad.</p></div>
-<form id="feedbackForm" class="feedback-form">
+<div><p class="contact-eyebrow">HELP SHAPE THE NEXT MATCH</p><h2 id="feedbackTitle">Your feedback.<br><em>A better KICKS.</em></h2><p>Tell me what you enjoyed, what could be better, or what you would love to see next.</p><p class="feedback-local-note">Your feedback is saved securely and reviewed by the KICKS administrator.</p></div>
+<form id="feedbackForm" class="feedback-form" method="post" action="/feedback">
+@Html.AntiForgeryToken()
 <div class="feedback-inputs"><label for="feedbackName">Your name<input id="feedbackName" name="name" autocomplete="name" required minlength="2" maxlength="100" placeholder="Your full name"></label><label for="feedbackEmail">Email address<input id="feedbackEmail" name="email" type="email" autocomplete="email" required maxlength="254" placeholder="you@@example.com"></label></div>
 <fieldset class="feedback-rating"><legend>How is your KICKS experience?</legend><div>
 <label><input type="radio" name="rating" value="1" required><span>1 ★</span><span class="visually-hidden">1 out of 5</span></label>
@@ -103,7 +105,7 @@
 <label><input type="radio" name="rating" value="5"><span>5 ★</span><span class="visually-hidden">5 out of 5</span></label>
 </div></fieldset>
 <label for="feedbackMessage">Your feedback<textarea id="feedbackMessage" name="message" required minlength="10" maxlength="1500" rows="5" placeholder="What would make your next match even better?"></textarea></label>
-<div class="feedback-actions"><button type="submit">Save feedback</button><small>Your name, email, rating and message are visible to the local administrator.</small></div>
+<div class="feedback-actions"><button type="submit">Send feedback</button><small>Your name, email, rating and message are visible to the KICKS administrator.</small></div>
 <p id="feedbackStatus" role="status" aria-live="polite"></p><a id="emailFeedback" class="feedback-email" hidden>Open email draft</a>
 </form></div></section>
 </main>

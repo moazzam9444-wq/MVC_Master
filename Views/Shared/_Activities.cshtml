@@ -1,6 +1,6 @@
 @model string
 <section class="sql-activities container" id="sqlActivities" data-kind="@Model" data-role="@(User.IsInRole("owner")?"owner":User.IsInRole("player")?"player":"anonymous")">
- <div class="act-heading"><div><p class="act-eyebrow">KICKS · PLAY. CONNECT. COMPETE.</p><h2>@(Model=="games"?"Open Games":"Team Challenges")</h2><p>13:00–23:00 Amman · 60 or 120 minutes · No payment collected</p></div><button class="act-btn" id="actCreate" hidden>@(Model=="games"?"Create Open Game":"Send Challenge")</button></div>
+ <div class="act-heading"><div><p class="act-eyebrow">KICKS · PLAY. CONNECT. COMPETE.</p><h2>@(Model=="games"?"Open Games":"Team Challenges")</h2><p>13:00–23:00 Amman · 60 or 120 minutes · @(Model=="games"?"Free to join":"Priced reservations use Stripe test payments")</p></div><button class="act-btn" id="actCreate" hidden>@(Model=="games"?"Create Open Game":"Send Challenge")</button></div>
  <form id="actFilters" class="act-tools"><label>Show<select id="actMode"></select></label><label>Search<input id="actSearch" maxlength="120" placeholder="Field, game or team" /></label><button class="act-btn secondary">Search</button></form>
  <p id="actNotice" role="status" aria-live="polite"></p><div id="actCards" class="act-grid"></div><nav id="actPages" class="act-tools" aria-label="Activity pages"></nav>
  <dialog id="actDetail"><button class="act-close" data-act-close="actDetail" aria-label="Close">×</button><div id="actDetailBody"></div></dialog>

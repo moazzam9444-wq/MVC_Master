@@ -28,7 +28,7 @@
   const today=()=>{const parts=Object.fromEntries(new Intl.DateTimeFormat('en-GB',{timeZone:'Asia/Amman',year:'numeric',month:'2-digit',day:'2-digit'}).formatToParts(new Date()).map(p=>[p.type,p.value]));return `${parts.year}-${parts.month}-${parts.day}`;};
   const player=()=>KicksAuth.current()?.role==='player';
   date.disabled=false;date.min=today();date.value=today();button.textContent=KicksAuth.current()?'Reserve this session':'Log in to reserve';
-  document.querySelector('.kx-payment-caption').textContent='Reserve now. No payment is collected; settlement is deferred.';
+  document.querySelector('.kx-payment-caption').textContent='Priced sessions: 30-minute hold, then Stripe TEST checkout. Free sessions confirm immediately.';
   async function refresh(message=''){
    const version=++generation;selected=null;quote=null;availablePrice=null;if(get('paymentDialog').open)get('paymentDialog').close();button.disabled=!!KicksAuth.current();get('selectedTime').textContent='—';get('selectedDuration').textContent=Number(duration.value)/60+(duration.value==='60'?' hour':' hours');get('bookingTotal').textContent='—';notice.textContent='Checking live availability…';slots.replaceChildren();
    if(!date.value||!date.validity.valid){notice.textContent='Choose today or a future date.';return;}

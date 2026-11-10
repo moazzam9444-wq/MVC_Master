@@ -1,0 +1,7 @@
+'use strict';
+const cp=require('node:child_process'),assert=require('node:assert/strict');
+const cases=[['missing',null],['original','Server=localhost;Database=Kicks;Integrated Security=True;TrustServerCertificate=True'],['generic','Server=localhost;Database=Kicks_Test;Integrated Security=True;TrustServerCertificate=True'],['remote','Server=remote.example.test;Database=Kicks_BookingTest_20261110_00000000;Integrated Security=True;TrustServerCertificate=True'],['SQL authentication','Server=localhost;Database=Kicks_BookingTest_20261110_00000000;User Id=synthetic;Password=not-a-real-credential;TrustServerCertificate=True']];
+const guards=[['C#','dotnet',['tests/Auth.Integration/bin/Release/net10.0/Auth.Integration.dll','--verify-test-isolation']],['PowerShell','pwsh',['-NoProfile','-File','tests/require-test-database.ps1']],['JavaScript',process.execPath,['-e',"require('./tests/test-database.cjs')()"]],['Legacy runner',process.execPath,['scripts/test-regressions.cjs','--test','tests/store-regression.cjs']]];
+let passed=0;
+for(const [label,value]of cases)for(const [guard,command,args]of guards){const env={...process.env};if(value===null)delete env.KICKS_TEST_CONNECTION;else env.KICKS_TEST_CONNECTION=value;const result=cp.spawnSync(command,args,{env,encoding:'utf8',windowsHide:true,timeout:30000});assert(result.status!==0&&!result.error,guard+' must refuse '+label);passed++;console.log('PASS: '+guard+' refuses '+label+' before mutation');}
+console.log('ISOLATION PASS: '+passed);

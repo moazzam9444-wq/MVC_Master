@@ -25,8 +25,8 @@
     <link rel="stylesheet" href="../../css/style.css" />
     <script src="../../js/navigation.js?v=1" defer></script>
 <script src="../../js/dialogs.js?v=1" defer></script>
-<script src="../../js/full-demo.js?v=coordinated-writes-1" defer></script><script src="../../js/admin-account.js?v=restored-1" defer></script>
-<script src="../../js/demo-data.js?v=preserve-legacy-3" defer></script>
+
+
 <script src="../../js/data-store.js?v=coordinated-writes-1" defer></script>
 @await Html.PartialAsync("_AuthState")
 <script src="../../js/account.js?identity-1" defer></script>
@@ -46,7 +46,8 @@
 <link rel="stylesheet" href="../../css/focused-refinement.css?v=1">
 <script src="../../assets/opendesign-football/js/vendor/ScrollTrigger.min.js" defer></script>
 <script src="../../js/focused-motion.js?v=1" defer></script>
-<link rel="stylesheet" href="../../css/table-pagination.css?v=1"><script src="../../js/table-pagination.js?v=1" defer></script></head>
+<link rel="stylesheet" href="../../css/table-pagination.css?v=1"><script src="../../js/table-pagination.js?v=1" defer></script>@await Html.PartialAsync("_Phase8Head")
+</head>
   <body class="kx-page kx-venue-page kx-focused">
     <a class="skip-link" href="#fieldContent">Skip to field details</a>
     <nav class="navbar navbar-expand-xl" aria-label="Main navigation">
@@ -152,7 +153,7 @@
       </form>
       <p class="eyebrow">YOUR RESERVATION</p>
       <h2 id="paymentDialogTitle">Confirm reservation</h2><p id="bookingQuoteSummary"></p>
-      <div class="visa-demo-card"><strong>KICKS</strong><span id="bookingCardDuration">SESSION · AMMAN</span><small>RESERVATION · NO PAYMENT COLLECTED</small></div>
+      <div class="visa-demo-card"><strong>KICKS</strong><span id="bookingCardDuration">SESSION · AMMAN</span><small>RESERVATION REVIEW · JOD PRICING</small></div>
       <div class="payment-breakdown">
         <div><span>Reservation price</span><strong id="paymentAmount"></strong></div>
       </div>
@@ -174,7 +175,7 @@
       <p class="eyebrow">YOUR MATCH PLAN</p>
       <h2 id="bookingDialogTitle">Reservation confirmed</h2>
       <p id="bookingPreview"></p>
-      
+
       <form method="dialog">
         <button class="apply-filters kx-btn kx-btn--primary kx-btn--wide">Back to field</button>
       </form>

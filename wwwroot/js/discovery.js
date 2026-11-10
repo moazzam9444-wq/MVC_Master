@@ -72,5 +72,16 @@
   let provider={async interpret(text){return parse(text);}};
   function setProvider(next){if(!next||typeof next.interpret!=='function')throw Error('Provider must implement interpret(text).');provider=next;}
   async function interpret(text){const raw=await provider.interpret(String(text).slice(0,500));const safe={};if(raw?.reset===true)safe.reset=true;if(Array.isArray(raw?.clear))safe.clear=raw.clear.filter(key=>['kind','city','query','maxPrice','format','date','after'].includes(key));if(typeof raw?.query==='string'&&raw.query.length<=160)safe.query=raw.query;if(['fields','games','tournaments'].includes(raw?.kind))safe.kind=raw.kind;if(typeof raw?.city==='string'&&raw.city.length<=80)safe.city=raw.city;if(Number.isFinite(raw?.maxPrice)&&raw.maxPrice>=0)safe.maxPrice=raw.maxPrice;if(['5v5','6v6','7v7'].includes(raw?.format))safe.format=raw.format;if(/^\d{4}-\d{2}-\d{2}$/.test(raw?.date))safe.date=raw.date;if(/^(?:[01]\d|2[0-3]):[0-5]\d$/.test(raw?.after))safe.after=raw.after;return safe;}
-  window.KicksDiscovery={parse,interpret,setProvider,search,coordinates,distance,mergeFilters};
+  async function searchSql(filters={}){
+    const kinds=filters.kind?[filters.kind]:['fields','games','tournaments'];
+    const groups=await Promise.all(kinds.map(async kind=>{
+      const query=new URLSearchParams();if(filters.city)query.set('City',filters.city);if(filters.query)query.set('Search',filters.query);
+      if(kind==='fields'){if(filters.format)query.set('Format',filters.format);if(filters.maxPrice!=null)query.set('Max',filters.maxPrice);}
+      const response=await fetch('/api/'+kind+'?'+query,{cache:'no-store'});if(!response.ok)throw Error('Search unavailable');const data=await response.json();
+      return data.items.map(row=>{const parts=row.startsAt?Object.fromEntries(new Intl.DateTimeFormat('en-CA',{timeZone:'Asia/Amman',year:'numeric',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit',hourCycle:'h23'}).formatToParts(new Date(row.startsAt)).map(p=>[p.type,p.value])):null;return {kind,id:row.id,name:row.name||row.title,city:row.city,area:row.area,format:row.type||row.format,price:kind==='fields'?row.price:kind==='tournaments'?row.entryFee:0,date:parts?parts.year+'-'+parts.month+'-'+parts.day:null,time:parts?parts.hour+':'+parts.minute:null,status:row.status,count:row.count,capacity:row.capacity};})
+        .filter(row=>(!filters.city||canonicalCity(row.city)===canonicalCity(filters.city))&&(!filters.format||row.format===filters.format)&&(filters.maxPrice==null||row.price<=filters.maxPrice)&&(kind==='fields'||(!['Cancelled','Completed','Archived'].includes(row.status)&&(!filters.date||row.date===filters.date)&&(!filters.after||row.time>=filters.after)&&(row.count??0)<row.capacity)));
+    }));
+    return {results:groups.flat().sort((a,b)=>a.price-b.price||a.name.localeCompare(b.name)),missingCoordinates:0};
+  }
+  window.KicksDiscovery={parse,interpret,setProvider,search,searchSql,coordinates,distance,mergeFilters};
 })();

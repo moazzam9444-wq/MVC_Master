@@ -55,7 +55,16 @@ public sealed class PaymentsController(StripePaymentService payments,SandboxSett
     async Task<IActionResult> Run(Func<Task<IActionResult>> action)
     {
         try{return await action();}
-        catch(ActivityException e){return StatusCode(e.Status,new{message=e.Message});}
-        catch{return StatusCode(503,new{message="Sandbox payment processing is temporarily unavailable. Retry safely."});}
+        catch(ActivityException e){return PaymentError(e.Status,e.Message);}
+        catch{return PaymentError(503,"Sandbox payment processing is temporarily unavailable. Retry safely.");}
+    }
+    IActionResult PaymentError(int status,string message)
+    {
+        if(Request.Headers.Accept.ToString().Contains("text/html",StringComparison.OrdinalIgnoreCase)&&Guid.TryParse(RouteData.Values["id"]?.ToString(),out var id))
+        {
+            Response.StatusCode=status;ViewData["PaymentReturnUrl"]="/payments/"+id;
+            return View("~/Views/Payments/Unavailable.cshtml",message);
+        }
+        return StatusCode(status,new{message});
     }
 }

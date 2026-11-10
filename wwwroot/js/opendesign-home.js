@@ -3,13 +3,13 @@
   'use strict';
   const store=window.KicksStore;
   const esc=value=>store.escape(String(value??''));
-  let sqlFields=[],sqlTotal=0,sqlGames=[],gamesError=false,sqlTournaments=[],tournamentsError=false;
+  let sqlFields=[],sqlTotal=0,sqlGames=[],gamesError=false,sqlTournaments=[],tournamentsError=false,sitePresentation={};
   const fieldsGrid=document.getElementById('home-fields-grid');
   const gamesGrid=document.getElementById('home-open-games-grid');
   const cupsGrid=document.getElementById('home-tournaments-grid');
   const form=document.getElementById('homeSearch');
   const city=document.getElementById('homeLocation'),date=document.getElementById('homeDate'),time=document.getElementById('homeTime');
-  date.disabled=true;time.disabled=true;date.title=time.title='Scheduling will be connected in a later phase';
+  date.disabled=false;time.disabled=false;date.title='Choose a date to check live availability';time.title='Optional start time · Amman';
   const status=document.getElementById('homeSearchStatus'),resultBar=document.getElementById('homeSearchResults');
   const reduced=matchMedia('(prefers-reduced-motion: reduce)');
   let filters=null,lenis;
@@ -28,7 +28,7 @@
     const start=new Date(game.startsAt),day=start.toLocaleDateString('en-GB',{weekday:'short',day:'numeric',month:'short',timeZone:'Asia/Amman'}),hour=start.toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit',timeZone:'Asia/Amman'}),spots=Math.max(0,game.capacity-game.count);
     return `<a class="game-row fl-game-row" href="Pages/OpenGames/game-details.html?id=${encodeURIComponent(game.id)}"><div class="game-date"><span>${esc(day)}</span><strong>${esc(hour)}</strong></div><div class="game-info"><h3>${esc(game.title)}</h3><p>${esc(game.field)} · ${esc(game.city)}</p><p>${esc(game.format)} · ${game.durationMinutes} min · No payment collected</p></div><span class="game-spots">${spots?spots+' spots left':'Full'}</span><span class="game-arrow">${arrow}</span></a>`;
   }
-  function cupCard(cup){return `<a class="fl-cup-row" href="Pages/Tournaments/tournament-details.html?id=${encodeURIComponent(cup.id)}"><div><p>${esc(new Date(cup.startsAt).toLocaleDateString('en-GB',{timeZone:'Asia/Amman'}))} / ${esc(cup.city)}</p><strong>${esc(cup.name)}</strong><p>${cup.count} / ${cup.capacity} teams · ${Number(cup.entryFee).toFixed(2)} JD / team · Payment Not Processed</p></div>${arrow}</a>`;}
+  function cupCard(cup){return `<a class="fl-cup-row" href="Pages/Tournaments/tournament-details.html?id=${encodeURIComponent(cup.id)}"><div><p>${esc(new Date(cup.startsAt).toLocaleDateString('en-GB',{timeZone:'Asia/Amman'}))} / ${esc(cup.city)}</p><strong>${esc(cup.name)}</strong><p>${cup.count} / ${cup.capacity} teams · ${Number(cup.entryFee).toFixed(2)} JD / team · Stripe test payment for paid entries</p></div>${arrow}</a>`;}
   function renderHighlights(){
     const fields=sqlFields,selected=city.value;
     const cities=[...new Set([...city.options].map(o=>o.value).filter(Boolean).concat(fields.map(f=>f.city)))].sort();
@@ -43,18 +43,28 @@
     cupsGrid.innerHTML=tournamentsError?'<p class="home-empty">Tournament information is temporarily unavailable.</p>':sqlTournaments.filter(t=>t.status!=='Completed').slice(0,1).map(cupCard).join('')||'<p class="home-empty">No active or upcoming tournaments yet. Get your team ready for the next one.</p>';
     document.getElementById('homeCities').textContent=cities.length?cities.join(' · '):'Jordan / Everyone’s game';
     window.ScrollTrigger?.refresh();
-    const settings=store.settings(),aboutTitle=document.getElementById('homeAboutTitle'),aboutDescription=document.getElementById('homeAboutDescription'),contact=document.getElementById('homeContact');
+    const settings=sitePresentation,aboutTitle=document.getElementById('homeAboutTitle'),aboutDescription=document.getElementById('homeAboutDescription'),contact=document.getElementById('homeContact');
     if(aboutTitle&&settings.title?.trim())aboutTitle.textContent=settings.title;
     if(aboutDescription&&settings.description?.trim())aboutDescription.textContent=settings.description;
     if(contact&&settings.contact){contact.textContent=settings.contact;contact.hidden=false;}
     document.dispatchEvent(new CustomEvent('kicks:home-rendered'));
   }
   if(store){
-    for(let hour=10;hour<=22;hour++)time.add(new Option(`${String(hour).padStart(2,'0')}:00`,`${String(hour).padStart(2,'0')}:00`));
+    for(let hour=13;hour<=22;hour++)time.add(new Option(`${String(hour).padStart(2,'0')}:00`,`${String(hour).padStart(2,'0')}:00`));
     time.addEventListener('change',()=>{date.required=Boolean(time.value);});
     form.addEventListener('submit',async event=>{
       event.preventDefault();date.min=ammanNow().date;if(!form.reportValidity())return;
-      filters={city:city.value,date:'',time:''};try{const response=await fetch('/api/fields?City='+encodeURIComponent(city.value),{cache:'no-store'});if(!response.ok)throw Error();const data=await response.json();sqlTotal=data.total;sqlFields=data.items.map(f=>({...f,amenities:f.amenities.map(a=>a.name).join(', ')}));sqlTotal=data.total;renderHighlights();}catch{status.textContent='Field information is temporarily unavailable.';return;}
+      filters={city:city.value,date:date.value,time:time.value};const submit=form.querySelector('[type=submit]');submit.disabled=true;status.textContent='Checking available pitches…';
+      try{
+        const response=await fetch('/api/fields?City='+encodeURIComponent(city.value),{cache:'no-store'});if(!response.ok)throw Error();const data=await response.json();
+        let items=data.items;
+        if(filters.date){
+          const available=await Promise.all(items.map(async f=>{const r=await fetch('/api/fields/'+f.id+'/availability?date='+encodeURIComponent(filters.date)+'&durationMinutes=60',{cache:'no-store'});if(!r.ok)throw Error();const a=await r.json();return a.slots.some(s=>s.available&&(!filters.time||s.hour===Number(filters.time.slice(0,2))));}));
+          items=items.filter((_,i)=>available[i]);
+        }
+        sqlFields=items.map(f=>({...f,amenities:f.amenities.map(a=>a.name).join(', ')}));sqlTotal=filters.date?items.length:data.total;renderHighlights();
+        if(filters.date)status.textContent=items.length+' available pitch(es) in this result page · '+filters.date+(filters.time?' · '+filters.time:'')+' Amman. Open a pitch to reserve.'+(data.total>12?' Explore the full catalogue for more locations.':'');
+      }catch{status.textContent='Field information is temporarily unavailable. Please retry.';return;}finally{submit.disabled=false;}
       document.getElementById('fields').scrollIntoView({behavior:reduced.matches?'instant':'smooth',block:'start'});
       status.tabIndex=-1;status.focus({preventScroll:true});
     });
@@ -72,4 +82,5 @@ fetch('/api/tournaments',{cache:'no-store'}).then(r=>{if(!r.ok)throw Error();ret
 fetch('/api/games',{cache:'no-store'}).then(r=>{if(!r.ok)throw Error();return r.json();}).then(data=>{sqlGames=data.items;renderHighlights();}).catch(()=>{gamesError=true;renderHighlights();});
 fetch('/api/fields?Sort=newest',{cache:'no-store'}).then(r=>{if(!r.ok)throw Error();return r.json();}).then(data=>{sqlTotal=data.total;sqlFields=data.items.map(f=>({...f,amenities:f.amenities.map(a=>a.name).join(', ')}));renderHighlights();}).catch(()=>{fieldsGrid.innerHTML='<p class="home-empty">Field information is temporarily unavailable.</p>';});
 fetch('/api/field-cities',{cache:'no-store'}).then(r=>r.json()).then(cities=>{for(const name of cities)if(![...city.options].some(o=>o.value===name))city.add(new Option(name,name));}).catch(()=>{});
+fetch('/api/site-presentation',{cache:'no-store'}).then(r=>{if(!r.ok)throw Error();return r.json();}).then(data=>{sitePresentation=data||{};renderHighlights();}).catch(()=>{});
 })();

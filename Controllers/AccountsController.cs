@@ -16,10 +16,18 @@ namespace KicksMvc.Controllers;
 public class AccountsController(KicksDbContext db, UserManager<User> users, OwnershipDocumentStore documents) : Controller
 {
     [HttpGet("/Pages/Auth/accounts")]
-    public async Task<IActionResult> Index()
+    public async Task<IActionResult> Index(int page=1,string? search=null,string status="all")
     {
-        var accounts = await db.Users.AsNoTracking().Include(u => u.OwnershipDocuments).OrderByDescending(u => u.Id).ToListAsync();
+        var query=db.Users.AsNoTracking();
+        search=search?.Trim();if(search?.Length>120)search=search[..120];
+        if(!string.IsNullOrEmpty(search))query=query.Where(u=>u.FullName.Contains(search)||u.Email!.Contains(search));
+        if(status is "Pending" or "Active" or "Inactive" or "Rejected")query=query.Where(u=>u.Status==status);
+        var total=await query.CountAsync();page=Math.Clamp(page,1,Math.Max(1,(total+19)/20));
+        ViewData["AccountPage"]=page;ViewData["AccountTotal"]=total;ViewData["AccountSearch"]=search;ViewData["AccountStatus"]=status;
+        var accounts = await query.Include(u => u.OwnershipDocuments).OrderByDescending(u => u.Id).Skip((page-1)*20).Take(20).ToListAsync();
+        var accountIds=accounts.Select(u=>u.Id).ToList();
         var memberships = await (from ur in db.UserRoles join r in db.Roles on ur.RoleId equals r.Id
+                                 where accountIds.Contains(ur.UserId)
                                  select new { ur.UserId, r.Name }).ToDictionaryAsync(x => x.UserId, x => x.Name);
         return PartialView("_Accounts", accounts.Select(u => new AccountRowViewModel(u.Id, u.FullName, u.Email!, u.Status,
             u.RequestedRole, memberships.GetValueOrDefault(u.Id), u.ConcurrencyStamp!, u.ReviewedAt, u.ReviewedBy,

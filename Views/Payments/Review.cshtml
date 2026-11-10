@@ -2,7 +2,8 @@
 @{var active=ViewData["HoldActive"] is true;}
 <!doctype html><html lang="en"><head><meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>Sandbox payment | KICKS</title><link rel="stylesheet" href="/css/style.css" /><link rel="stylesheet" href="/css/auth.css" />
-<link rel="stylesheet" href="/css/server-payments.css" /></head><body class="auth-page">
+<link rel="stylesheet" href="/css/server-payments.css" />@await Html.PartialAsync("_Phase8Head")
+</head><body class="auth-page">
 <main class="auth-shell"><section class="auth-panel payment-review" data-payment-id="@Model.Id">
 <a class="auth-brand" href="/index.html">KICKS</a><p class="eyebrow">STRIPE SANDBOX · NO REAL MONEY</p><h1>Review your payment</h1>
 <p>@(Model.BookingId is int bid?"Field reservation #"+bid:"Tournament team entry #"+Model.RegistrationId)</p>

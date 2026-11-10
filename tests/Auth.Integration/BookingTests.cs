@@ -166,6 +166,8 @@ static class BookingTests
     static async Task Cleanup(KicksDbContext db,string marker)
     {
         db.ChangeTracker.Clear();var users=await db.Users.Where(u=>u.Email!.StartsWith(marker+"-")).Select(u=>u.Id).ToListAsync();var fields=await db.Fields.Where(f=>users.Contains(f.OwnerId)).Select(f=>f.Id).ToListAsync();await using var tx=await db.Database.BeginTransactionAsync();
+        await db.Messages.Where(m=>users.Contains(m.SenderId)||users.Contains(m.RecipientId)).ExecuteDeleteAsync();
+        await db.Feedback.Where(f=>f.Email.StartsWith(marker+"-")).ExecuteDeleteAsync();
         await db.Bookings.Where(b=>fields.Contains(b.FieldId)&&users.Contains(b.UserId)).ExecuteDeleteAsync();await db.OpenGames.Where(g=>fields.Contains(g.FieldId)&&users.Contains(g.OrganizerId)).ExecuteDeleteAsync();await db.Tournaments.Where(t=>fields.Contains(t.FieldId)&&users.Contains(t.CreatedBy)).ExecuteDeleteAsync();await db.FieldAmenities.Where(a=>fields.Contains(a.FieldId)).ExecuteDeleteAsync();await db.FieldImages.Where(i=>fields.Contains(i.FieldId)).ExecuteDeleteAsync();await db.Fields.Where(f=>fields.Contains(f.Id)).ExecuteDeleteAsync();await db.UserRoles.Where(u=>users.Contains(u.UserId)).ExecuteDeleteAsync();await db.UserClaims.Where(u=>users.Contains(u.UserId)).ExecuteDeleteAsync();await db.UserLogins.Where(u=>users.Contains(u.UserId)).ExecuteDeleteAsync();await db.UserTokens.Where(u=>users.Contains(u.UserId)).ExecuteDeleteAsync();await db.Users.Where(u=>users.Contains(u.Id)).ExecuteDeleteAsync();await tx.CommitAsync();
     }
     private sealed class BookingClock:TimeProvider { public DateTimeOffset Value {get;set;}=DateTimeOffset.UtcNow;public override DateTimeOffset GetUtcNow()=>Value.ToUniversalTime(); }

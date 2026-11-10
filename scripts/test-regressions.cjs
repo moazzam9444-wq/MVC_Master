@@ -1,14 +1,17 @@
 {const f=require('fs'),p=require('path'),write=f.writeFileSync.bind(f),root=p.resolve('.local')+p.sep;f.writeFileSync=(file,...args)=>{if(typeof file==='string'&&p.resolve(file).startsWith(root))f.mkdirSync(p.dirname(p.resolve(file)),{recursive:true});return write(file,...args);};}
 {const f=require('node:fs'),p=require('node:path'),root=p.resolve(__dirname,'..'),routes=JSON.parse(f.readFileSync(p.join(root,'migration-routes.json'),'utf8')),read=f.readFileSync.bind(f),exists=f.existsSync.bind(f);const map=value=>{if(typeof value!=='string')return value;const rel=p.relative(root,p.resolve(value)).replaceAll('\\','/');if(/^(js|css|assets)\//.test(rel))return p.join(root,'wwwroot',rel);const route=routes.find(r=>r.url===rel);return route?p.join(root,route.view):value;};f.readFileSync=(value,...args)=>{const mapped=map(value),result=read(mapped,...args);return mapped!==value&&String(value).endsWith('.html')&&typeof result==='string'?result.replaceAll('@@','@'):result;};f.existsSync=value=>exists(map(value));}
-/* Local-only regression runner. Targets the MVC host on 5602.
+/* Local-only regression runner. Requires an explicitly isolated MVC host.
  * Legacy tests hardcode 4173; only their local URL is adapted in memory.
  * Assertions and application source are not rewritten. Each test gets a process.
  */
 const fs=require('node:fs'),path=require('node:path'),cp=require('node:child_process'),Module=require('node:module');
 const root=path.resolve(__dirname,'..');
-const base=process.env.KICKS_TEST_URL||'http://127.0.0.1:5602';
+require('../tests/test-database.cjs')();
+const base=process.env.KICKS_TEST_URL;
+if(!base)throw Error('Set KICKS_TEST_URL to the isolated MVC application. No live-host fallback is permitted.');
 const target=new URL(base);
 if(!['localhost','127.0.0.1','[::1]'].includes(target.hostname))throw Error('Run audit fixtures on loopback only.');
+if(target.port==='5602')throw Error('The normal application port is forbidden for automated mutation tests.');
 process.chdir(root);
 process.env.KICKS_TEST_URL=target.origin;
 process.env.KICKS_VISUAL_BASE=target.origin+'/';

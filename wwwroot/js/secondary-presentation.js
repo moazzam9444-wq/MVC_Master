@@ -31,7 +31,7 @@
   }
   const ledger=$('.reservations-panel',view);if(ledger&&!ledger.dataset.kxComposed){ledger.dataset.kxComposed='true';const intro=make('aside','kx-ledger-intro');const heading=$('.reservations-heading',ledger),tools=$('.reservations-tools',ledger);ledger.prepend(intro);if(heading)intro.append(heading);if(tools)intro.append(tools)}
   const current=$('#viewTitle')?.textContent||'Overview';const crumb=$('.kx-dashboard-breadcrumb');if(crumb&&crumb.textContent!==current)crumb.textContent=current;
-  $$('.table-wrap',view).forEach(w=>{w.tabIndex=0;w.setAttribute('role','region');w.setAttribute('aria-label',current+' records â€” scroll horizontally when needed')});
+  $$('.table-wrap',view).forEach(w=>{w.tabIndex=0;w.setAttribute('role','region');w.setAttribute('aria-label',current+' records — scroll horizontally when needed')});
  }
  function motion(){if(matchMedia('(prefers-reduced-motion: reduce)').matches)return;$$('.kx-workspace-lead:not([data-kx-motion]),.kx-match-hero:not([data-kx-motion]),.kx-cup-hero:not([data-kx-motion])').forEach(n=>{n.dataset.kxMotion='true';if(window.gsap)gsap.fromTo(n,{y:12},{y:0,duration:.55,ease:'power2.out',clearProps:'transform'});});}
  function update(){cards();details();dashboard();

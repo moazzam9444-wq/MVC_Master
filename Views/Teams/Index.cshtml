@@ -1,7 +1,7 @@
 <!doctype html>
 <html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="description" content="Find your football team in Jordan. Build a squad, meet your teammates and make matchday happen with KICKS."><title>Teams | KICKS</title><link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=Inter:wght@@400;500;600;700&family=Oswald:wght@@400;500;600;700&display=swap" rel="stylesheet"><link href="https://cdn.jsdelivr.net/npm/bootstrap@@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet"><link rel="stylesheet" href="../../css/style.css"><link rel="stylesheet" href="../../css/account.css"><link rel="stylesheet" href="../../css/footer.css"><link rel="stylesheet" href="../../css/teams.css?v=teams-1"><link rel="stylesheet" href="../../css/server-teams.css?v=1"><script src="../../js/navigation.js?v=1" defer></script>
 <script src="../../js/dialogs.js?v=1" defer></script>
-<script src="../../js/theme.js"></script><script src="../../js/full-demo.js?v=coordinated-writes-1" defer></script><script src="../../js/admin-account.js" defer></script><script src="../../js/demo-data.js?v=preserve-legacy-3" defer></script>
+<script src="../../js/theme.js"></script>
 <script src="../../js/data-store.js?v=coordinated-writes-1" defer></script>@await Html.PartialAsync("_AuthState")
 <script src="../../js/account.js?identity-1" defer></script><script src="../../js/server-teams.js?v=sql-1" defer></script><link rel="stylesheet" href="../../css/dialogs.css?v=1">
 <link rel="stylesheet" href="../../css/community.css?v=1">
@@ -13,7 +13,8 @@
 <link rel="stylesheet" href="../../css/kicks-system.css?v=1">
 <link rel="stylesheet" href="../../css/kicks-secondary.css?v=1">
 <script src="../../js/secondary-presentation.js?v=1" defer></script>
-<link rel="stylesheet" href="../../css/table-pagination.css?v=1"><script src="../../js/table-pagination.js?v=1" defer></script></head>
+<link rel="stylesheet" href="../../css/table-pagination.css?v=1"><script src="../../js/table-pagination.js?v=1" defer></script>@await Html.PartialAsync("_Phase8Head")
+</head>
 <body class="teams-page kx-page kx-secondary">
 <svg class="sprite" aria-hidden="true" xmlns="http://www.w3.org/2000/svg"><defs>
 <symbol id="i-arrow" viewBox="0 0 24 24"><path d="M5 12h14M12 5l7 7-7 7"/></symbol><symbol id="i-plus" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></symbol><symbol id="i-search" viewBox="0 0 24 24"><circle cx="10.5" cy="10.5" r="6.5"/><path d="m16 16 5 5"/></symbol><symbol id="i-pin" viewBox="0 0 24 24"><path d="M19 10c0 5-7 11-7 11S5 15 5 10a7 7 0 1 1 14 0Z"/><circle cx="12" cy="10" r="2"/></symbol><symbol id="i-people" viewBox="0 0 24 24"><circle cx="9" cy="8" r="3"/><path d="M3 21v-3a6 6 0 0 1 12 0v3M16 5a3 3 0 0 1 0 6M18 15a5 5 0 0 1 3 5"/></symbol><symbol id="i-clock" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 6v6l4 2"/></symbol><symbol id="i-close" viewBox="0 0 24 24"><path d="m6 6 12 12M6 18 18 6"/></symbol><symbol id="i-shield" viewBox="0 0 24 24"><path d="M12 3 4 6v6c0 4 8 9 8 9s8-5 8-9V6Z"/><path d="m8 12 3 3 5-6"/></symbol><symbol id="i-ball" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="m12 8 4 3-2 5h-5l-2-5Z M12 8V3M16 11l5-2M14 16l3 4M9 16l-3 4M7 11 3 9"/></symbol><symbol id="i-check" viewBox="0 0 24 24"><path d="m5 12 4 4L19 6"/></symbol>

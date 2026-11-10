@@ -1,11 +1,5 @@
-// نقرأ إعدادات التواصل فقط حتى يبقى نص About خاصاً بهذه الصفحة.
-{
-  const settings = KicksStore.settings();
-  const city = document.getElementById('aboutCity');
-  const contact = document.getElementById('aboutContact');
-
-  city.textContent = settings.city;
-  city.hidden = !settings.city;
-  contact.textContent = settings.contact;
-  contact.hidden = !settings.contact;
-}
+/* Public contact presentation comes from SQL; browser preferences never replace it. */
+fetch('/api/site-presentation',{cache:'no-store'}).then(r=>{if(!r.ok)throw Error();return r.json();}).then(settings=>{
+ if(!settings)return;
+ for(const [id,value]of [['aboutCity',settings.city],['aboutContact',settings.contact]]){const target=document.getElementById(id);if(target){target.textContent=value||'';target.hidden=!value;}}
+}).catch(()=>{});

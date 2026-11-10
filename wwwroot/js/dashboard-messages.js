@@ -2,7 +2,7 @@
 (() => {
  function render(){
   document.getElementById('dashboardView').innerHTML='<section id="messagesPanel" class="messages-panel" aria-label="Direct messages"></section>';
-  KicksMessages.render();
+  KicksWorkspace.messages();
  }
  window.KicksDashboardMessages={render};
 })();

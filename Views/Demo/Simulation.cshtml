@@ -4,7 +4,7 @@
 <link rel="stylesheet" href="../../css/premium-shell.css?v=1">
 <script src="../../js/theme.js?v=premium-1"></script>
 <link rel="stylesheet" href="../../css/account.css?v=accounts-7">
-<script src="../../js/admin-account.js?v=restored-1" defer></script>
+
 <script src="../../js/data-store.js?v=coordinated-writes-1" defer></script>
 @await Html.PartialAsync("_AuthState")
 <script src="../../js/account.js?identity-1" defer></script>
@@ -13,7 +13,8 @@
 <link rel="stylesheet" href="../../css/kicks-system.css?v=1">
 <link rel="stylesheet" href="../../css/kicks-secondary.css?v=1">
 <script src="../../js/secondary-presentation.js?v=1" defer></script>
-<link rel="stylesheet" href="../../css/table-pagination.css?v=1"><script src="../../js/table-pagination.js?v=1" defer></script></head>
+<link rel="stylesheet" href="../../css/table-pagination.css?v=1"><script src="../../js/table-pagination.js?v=1" defer></script>@await Html.PartialAsync("_Phase8Head")
+</head>
 <body class="kx-page kx-secondary"><header><a class="brand" href="../../index.html">KICKS</a><span class="tag">ديمو مستقل · بيانات تجريبية</span><a href="../../index.html">الموقع الرئيسي ↗</a></header><main>
 <section class="intro"><p class="eyebrow">THE MATCHDAY EXPERIENCE</p><h1>من التيم… <span>لصافرة النهائي.</span></h1><p>٤ تيمات · ٢٤ لاعب · تشالنج · بطولة</p><p>محاكاة تفاعلية للعرض؛ لا تنشئ حسابات أو حجوزات في الموقع.</p></section>
 <section class="toolbar"><label for="persona">عم بتشوف بعين مين؟<select id="persona"><option value="a">كوتش أحمد · صقور عمّان</option><option value="b">كوتش عمر · نجوم الزرقاء</option><option value="admin">منظّم البطولة</option><option value="player">اللاعب يزن · صقور عمّان</option></select></label><button id="reset" class="secondary">إعادة التجربة من البداية</button></section>

@@ -21,7 +21,7 @@
     registrations: role === "player" ? "My tournaments" : "Team registrations",
     profile: "My profile",
     settings: "Site settings",
-    revenue: "Revenue",
+    revenue: "Payment review",
     feedback: "Feedback",
     messages: "Messages",
   };
@@ -156,9 +156,9 @@
     if(["tournaments","registrations"].includes(view)){location.assign("/Pages/Tournaments/tournaments.html?mode="+(role==="owner"?"mine":role==="player"&&view==="registrations"?"registered":"browse"));return;}
     if(["games","memberships"].includes(view)){location.assign("/Pages/OpenGames/open-games.html?mode="+(role==="owner"?"mine":view==="memberships"?"joined":"browse"));return;}
     if(view === "bookings" && ['player','owner'].includes(role)){KicksBookings.render();return;}
-    if(view === "bookings" && role === "admin"){getElement('dashboardView').innerHTML='<section class="dash-panel"><h2>Bookings</h2><p>Reservations are managed by players and field owners.</p></section>';return;}
+    if(view === "bookings" && role === "admin"){KicksWorkspace.ledger('bookings');return;}
     if (view === "fields" && role === "owner") { KicksServerFields.render(); return; }
-    if(view === "fields" && role === "admin"){getElement("dashboardView").innerHTML='<section class="dash-panel"><h2>Fields</h2><p>Field management is available from an owner account.</p><a class="dash-btn" href="/Pages/Fields/fields.html">View public catalogue</a></section>';return;}
+    if(view === "fields" && role === "admin"){KicksWorkspace.ledger('fields');return;}
     if (view === "overview") {
       // نعرض الملخص مباشرة، دون دالة وسيطة تستخدم مرة واحدة.
       KicksDashboardOverview.render({
@@ -169,6 +169,8 @@
         getRecords: getVisibleRecords,
         getRecord: getRecord,
       });
+    } else if(view==='settings'&&role==='admin'){KicksWorkspace.settings();return;
+    } else if(view==='feedback'&&role==='admin'){KicksWorkspace.ledger('feedback');return;
     } else if (view === "users" && role === "admin") {
       const target = getElement("dashboardView");
       target.innerHTML = '<section class="dash-panel"><p>Loading accounts…</p></section>';
@@ -990,7 +992,7 @@
           <div class="profile-details-grid">
             ${details.map(([label, value]) => `<div class="profile-detail"><span>${label}</span><strong>${escapeHtml(value || "Not added yet")}</strong></div>`).join("")}
           </div>
-          <div class="profile-view-actions"><p>Your information is private to your account.</p><span>Profile editing will be connected in a later backend phase.</span></div>
+          <div class="profile-view-actions"><p>Your information is private to your account.</p><span>Contact the administrator to update account details.</span></div>
         </section>`;
       getElement("editProfile")?.addEventListener("click", () => {
         profileEditing = true;
@@ -1112,8 +1114,8 @@
   store.watchActivityClock(() => {
     if (["overview", "games", "tournaments", "bookings", "memberships", "registrations"].includes(view)) renderDashboard();
   });
-  if(role==='admin')fetch('/api/payments/history',{credentials:'same-origin',cache:'no-store'}).then(async r=>{if(!r.ok||r.redirected)return;window.KicksPaymentSummary=await r.json();if(view==='overview')renderDashboard();}).catch(()=>{});
-  fetch('/api/tournaments/summary',{credentials:'same-origin',cache:'no-store'}).then(async r=>{if(!r.ok||r.redirected)throw Error('Unavailable');window.KicksTournamentSummary=await r.json();if(view==='overview')renderDashboard();}).catch(()=>{});
-  fetch(role==='admin'?'/api/games':'/api/activities/summary',{credentials:'same-origin',cache:'no-store'}).then(async r=>{if(!r.ok||r.redirected)throw Error('Unavailable');window.KicksActivitySummary=await r.json();if(view==='overview')renderDashboard();}).catch(()=>{});
+  // Compatibility summaries support existing activity modules without reloading the SQL overview.
+  fetch('/api/tournaments/summary',{credentials:'same-origin',cache:'no-store'}).then(async r=>{if(!r.ok||r.redirected)throw Error('Unavailable');window.KicksTournamentSummary=await r.json();}).catch(()=>{});
+  if(role!=='admin')fetch('/api/activities/summary',{credentials:'same-origin',cache:'no-store'}).then(async r=>{if(!r.ok||r.redirected)throw Error('Unavailable');window.KicksActivitySummary=await r.json();}).catch(()=>{});
   renderDashboard();
 })();

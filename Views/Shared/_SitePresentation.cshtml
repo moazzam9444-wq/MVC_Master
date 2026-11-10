@@ -1,0 +1,10 @@
+@model SitePresentationInput
+<section class="dash-panel"><div class="panel-heading"><div><p class="workspace-eyebrow">SITE PRESENTATION</p><h2>Make KICKS feel at home</h2><p>Update the public introduction and contact text.</p></div></div>
+ <form id="sitePresentationForm" class="phase8-settings" method="post" action="/dashboard/settings">
+ @Html.AntiForgeryToken()
+ <label>Introduction title (required)<input name="Title" required maxlength="200" value="@Model.Title"></label>
+ <label>Introduction description (required)<textarea name="Description" required maxlength="1000" rows="4">@Model.Description</textarea></label>
+ <div class="form-grid"><label>City (required)<input name="City" required maxlength="100" value="@Model.City"></label><label>Public contact text<input name="Contact" maxlength="254" value="@Model.Contact"></label></div>
+ <p id="sitePresentationStatus" role="status" aria-live="polite"></p><button class="dash-btn">Save presentation ↗</button></form>
+ <aside class="phase8-policy"><h3>Sandbox payment policy</h3><p>Prices are in JOD, with a fixed test conversion of 1 JOD = 1.40 USD. Signed Stripe webhooks verify payment. Reservation holds last 30 minutes.</p><p>Paid cancellations require financial review. No automatic refunds, commissions, payouts or settlement.</p></aside>
+</section>

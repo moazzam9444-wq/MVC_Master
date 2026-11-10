@@ -25,7 +25,7 @@
     teamRequests: [],
     challenges: [],
     challengeRequests: [],
-    users: [structuredClone(window.KicksAdminAccount)],
+    users: window.KicksAdminAccount ? [structuredClone(window.KicksAdminAccount)] : [],
     settings: {
       title: "Football brings us together.",
       description:

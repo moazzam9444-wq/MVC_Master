@@ -1,12 +1,13 @@
 /* Venue presentation only: mirrors existing record/DOM values, never writes storage. */
 (() => {
-  function mount() {
+  async function mount() {
     const content = document.getElementById('fieldContent');
     if (!content || content.hidden || !window.KicksStore) return;
     const id = new URLSearchParams(location.search).get('id');
-    const field = KicksStore.list('fields').find(row => String(row.id) === id);
+    let field;
+    try{const response=await fetch('/api/fields/'+encodeURIComponent(id),{cache:'no-store'});if(!response.ok)return;field=await response.json();}catch{return;}
     if (!field) return;
-    const owner = KicksStore.find('users', field.ownerId);
+    const owner = null; // Public field DTO intentionally omits private owner identity.
     const place = [field.area, field.city].filter(Boolean).join(', ');
     for (const [selector, value] of [['[data-kx-location]',place],['[data-kx-format]',field.type],['[data-kx-owner]',owner?.name]]) {
       const target = content.querySelector(selector);

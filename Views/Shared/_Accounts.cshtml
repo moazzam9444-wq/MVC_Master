@@ -1,15 +1,17 @@
 @model IReadOnlyList<AccountRowViewModel>
+@{var page=(int)(ViewData["AccountPage"]??1);var total=(int)(ViewData["AccountTotal"]??Model.Count);var status=ViewData["AccountStatus"] as string??"all";}
 <section class="dash-panel" id="serverAccounts">
     <div class="panel-heading"><div><h2>Registration &amp; account access</h2><p>Review requests and assign one account role. Ownership proof is required for field owners.</p></div></div>
     @if (TempData["AccountNotice"] is string notice) { <p role="status">@notice</p> }
-    @if (Model.Count == 0) { <p class="empty-dashboard">No accounts have been created yet.</p> }
-    <div class="table-wrap dashboard-table-wrap"><table class="dashboard-table">
+    <form id="sqlAccountFilters" class="phase8-filter"><label>Find an account<input type="search" name="Search" maxlength="120" value="@ViewData["AccountSearch"]" placeholder="Name or email"></label><label>Status<select name="Status">@foreach(var value in new[]{"all","Pending","Active","Inactive","Rejected"}){<option value="@value" selected="@(status==value)">@(value=="all"?"All statuses":value)</option>}</select></label><button class="dash-btn secondary">Search</button></form>
+    @if (Model.Count == 0) { <p class="empty-dashboard">No matching accounts. Try another search or status.</p> }
+    <div class="table-wrap dashboard-table-wrap"><table class="dashboard-table" data-no-pagination>
         <thead><tr><th>Account</th><th>Role</th><th>Status</th><th>Review</th></tr></thead>
         <tbody>
         @foreach (var account in Model)
         {
             <tr data-account-id="@account.Id"><td><strong class="table-primary">@account.Name</strong><small class="table-secondary">@account.Email</small>
-                @if (account.ReviewedAt is not null) { <small class="table-secondary">Reviewed @account.ReviewedAt.Value.ToString("u") by #@account.ReviewedBy</small> }
+                @if (account.ReviewedAt is not null) { <small class="table-secondary">Reviewed @account.ReviewedAt.Value.ToOffset(TimeSpan.FromHours(3)).ToString("dd MMM yyyy HH:mm") Amman by #@account.ReviewedBy</small> }
             </td><td>@(account.Role ?? "Unassigned")<br /><small>Requested: @account.RequestedRole</small></td><td>@account.Status</td><td class="account-review-cell"><div class="account-review-controls">
                 @foreach (var document in account.Documents)
                 { <p><a class="dash-btn secondary" href="/Pages/Auth/accounts/documents/@document.Id" download>Download @document.FileName</a></p> }
@@ -37,4 +39,5 @@
         }
         </tbody>
     </table></div>
+    <nav class="kicks-table-pagination" aria-label="Account pages">@if(page>1){<button data-account-page="@(page-1)">Previous</button>}<span>Page @(page) of @Math.Max(1,(total+19)/20) · @total account(s)</span>@if(page*20<total){<button data-account-page="@(page+1)">Next</button>}</nav>
 </section>

@@ -21,6 +21,17 @@ using System.Security.Cryptography;
 
 TestDatabase.RequireIsolated();
 if(args.Contains("--verify-test-isolation")){Console.WriteLine("PASS: explicit restored test database identity verified.");return;}
+if(args.Contains("--phase8-inventory"))
+{
+    using var inventoryFactory=new AuthFactory();using var inventoryClient=inventoryFactory.NewClient();
+    var actions=inventoryFactory.Services.GetRequiredService<Microsoft.AspNetCore.Mvc.Infrastructure.IActionDescriptorCollectionProvider>().ActionDescriptors.Items
+        .OfType<Microsoft.AspNetCore.Mvc.Controllers.ControllerActionDescriptor>().OrderBy(a=>a.ControllerName).ThenBy(a=>a.ActionName)
+        .Select(a=>new{a.ControllerName,a.ActionName,Route=a.AttributeRouteInfo?.Template,
+            Methods=a.ActionConstraints?.OfType<Microsoft.AspNetCore.Mvc.ActionConstraints.HttpMethodActionConstraint>().SelectMany(c=>c.HttpMethods).ToArray(),
+            Roles=a.EndpointMetadata.OfType<Microsoft.AspNetCore.Authorization.IAuthorizeData>().Select(x=>x.Roles??"Authenticated").ToArray(),
+            Public=a.EndpointMetadata.OfType<Microsoft.AspNetCore.Authorization.IAllowAnonymous>().Any()||!a.EndpointMetadata.OfType<Microsoft.AspNetCore.Authorization.IAuthorizeData>().Any()});
+    Console.WriteLine(JsonSerializer.Serialize(actions));return;
+}
 if(args.Contains("--stripe-fixture")){await StripeTests.Fixture(args[^1],args[^2]);return;}
 if(args.Contains("--stripe"))
 {
@@ -28,7 +39,8 @@ if(args.Contains("--stripe"))
     catch(Exception error){Console.Error.WriteLine(error is Stripe.StripeException?"FAIL: Official Stripe TEST API check failed; sensitive diagnostics suppressed.":Regex.Replace(error.Message,@"(?:sk|pk)_(?:test|live)_[A-Za-z0-9_]+|whsec_[A-Za-z0-9_]+","[REDACTED]"));Environment.ExitCode=1;}
     return;
 }
-if(args.Contains("--tournaments"))await TournamentTests.Run();
+if(args.Contains("--phase8"))await Phase8Tests.Run();
+else if(args.Contains("--tournaments"))await TournamentTests.Run();
 else if(args.Contains("--tournament-browser-setup"))await TournamentTests.Fixture(args[^1],"setup");
 else if(args.Contains("--tournament-browser-cleanup"))await TournamentTests.Fixture(args[^1],"cleanup");
 else if(args.Contains("--tournament-browser-ended"))await TournamentTests.Fixture(args[^1],"ended");
